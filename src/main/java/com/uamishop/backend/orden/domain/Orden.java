@@ -30,16 +30,10 @@ public class Orden {
             throw new IllegalArgumentException("La orden debe tener al menos un item");
         }
 
-        // Regla: El total de la orden debe de ser mayor a cero
-        Money total = items.stream()
-                .map(ItemOrden::getSubtotal)
-                .reduce(Money.ZERO, Money::sumar);
-        if (total.compareTo(Money.ZERO) <= 0) {
-            throw new IllegalArgumentException("El total de la orden debe de ser mayor a cero");
-        }
-
         // Regla: La direccion de envio debe de ser mayor a 5 digitos
-        if (direccionEnvio.length() < 5) {
+        if (direccionEnvio.length() < 5)
+
+        {
             throw new IllegalArgumentException("La direccion de envio debe de ser mayor a 5 digitos");
         }
 
