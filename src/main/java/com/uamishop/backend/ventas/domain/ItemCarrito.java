@@ -20,7 +20,11 @@ public class ItemCarrito {
         this.cantidad += cantidadExtra;
     }
 
-    // Calcula cuanto es (Precio x Cantidad)
+    // Metodo 'Modificar Cantidad' del carrito
+    public void actualizarCantidad(int nuevaCantidad) {
+        this.cantidad = nuevaCantidad;
+    }
+
     public Money subtotal() {
         return precioUnitario.multiplicar(cantidad);
     }

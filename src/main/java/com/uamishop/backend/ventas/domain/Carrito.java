@@ -11,63 +11,132 @@ public class Carrito {
     private UUID clienteId;
     private List<ItemCarrito> items;
     private EstadoCarrito estado;
+    private Money descuento;
 
     public Carrito(UUID clienteId) {
         this.id = UUID.randomUUID();
         this.clienteId = clienteId;
         this.items = new ArrayList<>();
         this.estado = EstadoCarrito.ACTIVO;
+        this.descuento = Money.pesos(0); // Inicializamos descuento en 0
     }
 
+
+    // 1. Agregar Producto
     public void agregarProducto(UUID productoId, int cantidad, Money precio) {
-        // Regla: Solo si esta activo
-        if (this.estado != EstadoCarrito.ACTIVO) {
-            throw new RuntimeException("El carrito no esta activo");
-        }
+        validarEstadoActivo();
+        if (cantidad <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
 
-        // Regla: Cantidad positiva
-        if (cantidad <= 0) {
-            throw new RuntimeException("La cantidad debe ser mayor a 0");
-        }
-
-        // Busca si ya existe el producto
         Optional<ItemCarrito> existente = items.stream()
                 .filter(i -> i.getProductoId().equals(productoId))
                 .findFirst();
 
         if (existente.isPresent()) {
-            // Regla: Maximo 10 unidades por producto
             if (existente.get().getCantidad() + cantidad > 10) {
                 throw new RuntimeException("Maximo 10 unidades permitidas por producto");
             }
             existente.get().aumentarCantidad(cantidad);
         } else {
-            // Regla: Maximo 10 unidades (validación inicial para producto nuevo)
-            if (cantidad > 10) {
-                throw new RuntimeException("Maximo 10 unidades permitidas por producto");
-            }
-
-            // Regla: Carrito lleno (max 20 productos distintos)
-            if (items.size() >= 20) {
-                throw new RuntimeException("Carrito lleno");
-            }
+            if (cantidad > 10) throw new RuntimeException("Maximo 10 unidades permitidas por producto");
+            if (items.size() >= 20) throw new RuntimeException("Carrito lleno");
             items.add(new ItemCarrito(productoId, cantidad, precio));
         }
     }
 
-    public List<ItemCarrito> getItems() {
-        return items;
+
+    // 2. Modificar Cantidad (Nuevo)
+    public void modificarCantidad(UUID productoId, int nuevaCantidad) {
+        validarEstadoActivo();
+        if (nuevaCantidad <= 0) {
+            eliminarProducto(productoId); // Si ponen 0, lo borramos
+            return;
+        }
+        if (nuevaCantidad > 10) throw new RuntimeException("Maximo 10 unidades permitidas");
+
+        ItemCarrito item = items.stream()
+                .filter(i -> i.getProductoId().equals(productoId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado en el carrito"));
+
+        item.actualizarCantidad(nuevaCantidad);
     }
 
-    public EstadoCarrito getEstado() {
-        return estado;
+
+    // 3. Eliminar Producto
+    public void eliminarProducto(UUID productoId) {
+        validarEstadoActivo();
+        boolean eliminado = items.removeIf(item -> item.getProductoId().equals(productoId));
+        if (!eliminado) throw new RuntimeException("Producto no encontrado");
     }
 
-    public UUID getId() {
-        return id;
+
+    // 4. Vaciar Carrito
+    public void vaciar() {
+        validarEstadoActivo();
+        items.clear();
+        this.descuento = Money.pesos(0); // Reiniciamos descuento
     }
 
-    public UUID getClienteId() {
-        return clienteId;
+
+    // 5. Iniciar Checkout
+    public void iniciarCheckout() {
+        validarEstadoActivo();
+        if (items.isEmpty()) throw new RuntimeException("No se puede hacer checkout de un carrito vacio");
+        this.estado = EstadoCarrito.EN_CHECKOUT;
     }
+
+
+    // 6. Completar Checkout (Revisalo Lau)
+    public void completarCheckout() {
+        if (this.estado != EstadoCarrito.EN_CHECKOUT) {
+            throw new RuntimeException("El carrito debe estar en checkout para completarse");
+        }
+        this.estado = EstadoCarrito.COMPLETADO;
+    }
+
+
+    // 7. Abandonar (Revisalo Lau)
+    public void abandonar() {
+        if (this.estado == EstadoCarrito.COMPLETADO) {
+            throw new RuntimeException("No se puede abandonar un carrito ya pagado");
+        }
+        this.estado = EstadoCarrito.ABANDONADO;
+    }
+
+
+    // 8. Aplicar Descuento (Revisalo Lau)
+    public void aplicarDescuento(Money montoDescuento) {
+        validarEstadoActivo();
+        Money subtotal = calcularSubtotal();
+        // Validamos que no se descuente mas de lo que cuesta el carrito
+        if (montoDescuento.esMayorQue(subtotal)) {
+            throw new RuntimeException("El descuento no puede ser mayor al total de la compra");
+        }
+        this.descuento = montoDescuento;
+    }
+
+    // ****** Calculos y auxiliares ******
+
+    public Money calcularTotal() {
+        Money subtotal = calcularSubtotal();
+        return subtotal.restar(descuento);
+    }
+
+    private Money calcularSubtotal() {
+        return items.stream()
+                .map(ItemCarrito::subtotal)
+                .reduce(Money.pesos(0), Money::sumar);
+    }
+
+    private void validarEstadoActivo() {
+        if (this.estado != EstadoCarrito.ACTIVO) {
+            throw new RuntimeException("El carrito no esta activo");
+        }
+    }
+
+    // Getters
+    public List<ItemCarrito> getItems() { return items; }
+    public EstadoCarrito getEstado() { return estado; }
+    public UUID getId() { return id; }
+    public Money getDescuento() { return descuento; }
 }
