@@ -12,6 +12,11 @@ public class Money {
     private final BigDecimal cantidad;
     private final String moneda;
 
+    //Constructor para JPA (protegido para que nadie más lo use)
+    protected Money() {
+        this.cantidad = null;
+        this.moneda = null;
+    }
     // Constructor privado
     private Money(BigDecimal cantidad, String moneda) {
         // RN-VO-02: No se permiten saldos negativos
@@ -34,6 +39,15 @@ public class Money {
                     "No se pueden sumar monedas distintas: " + this.moneda + " vs " + otro.moneda);
         }
         return new Money(this.cantidad.add(otro.cantidad), this.moneda);
+    }
+
+    public Money restar(Money otro) {
+        if (!this.moneda.equals(otro.moneda)) {
+            throw new IllegalArgumentException(
+                    "No se pueden restar monedas distintas: " + this.moneda + " vs " + otro.moneda);
+        }
+        // El constructor de Money ya valida que el resultado no sea negativo (RN-VO-02)
+        return new Money(this.cantidad.subtract(otro.cantidad), this.moneda);
     }
 
     public Money multiplicar(int factor) {
