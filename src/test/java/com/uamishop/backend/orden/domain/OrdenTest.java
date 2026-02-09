@@ -80,15 +80,24 @@ class OrdenTest {
     @Test
     void noDeberiaCrearOrdenConTotalCero() {
         // RN-ORD-02: El total debe ser mayor a cero
-        // Crear un item con precio cero no es posible debido a validación en Money
-        // Este test documenta la regla
+        
+        // Dado que ItemOrden.crear() ya valida que el precio sea positivo (esPositivo > 0),
+        // es imposible llegar a Orden.crear() con un total de cero usando items validos.
+        
+        // Opción A: Validar que no se puede ni siquiera crear el item con $0 (que es lo que causó el ERROR)
+        assertThrows(IllegalArgumentException.class, () -> {
+            ItemOrden.crear(
+                UUID.randomUUID(),
+                "Producto Gratis",
+                "FREE-001",
+                1,
+                Money.pesos(0.00)
+            );
+        }, "Debería fallar al crear un item con precio $0");
 
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            Money.pesos(0.00); // Esto debería fallar por RN-VO-02
-        });
-
-        // Money con cantidad 0 no es positivo, por lo que no puede crearse una orden
-        assertNotNull(exception);
+        // Opción B: Validar la lógica de Money que usa la Orden para el total
+        Money ceroPesos = Money.pesos(0);
+        assertFalse(ceroPesos.esPositivo(), "El total de la orden debe ser mayor a cero (no positivo)");
     }
 
     @Test
