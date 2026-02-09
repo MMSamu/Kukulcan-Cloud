@@ -3,7 +3,6 @@ package com.uamishop.backend.shared.domain;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 
-
 /**
  * Value Object para manejar dinero de forma segura.
  * Evita problemas de precisión que ocurren con 'double'.
@@ -30,15 +29,23 @@ public class Money {
 
     // Metodo para sumar dinero (valida que sea la misma moneda)
     public Money sumar(Money otro) {
-        if (!this.moneda.equals(otro.moneda)) {
-            throw new IllegalArgumentException(
-                    "No se pueden sumar monedas distintas: " + this.moneda + " vs " + otro.moneda);
-        }
+        validarMoneda(otro);
         return new Money(this.cantidad.add(otro.cantidad), this.moneda);
     }
 
     public Money multiplicar(int factor) {
         return new Money(this.cantidad.multiply(BigDecimal.valueOf(factor)), this.moneda);
+    }
+
+    public Money restar(Money otro) {
+        validarMoneda(otro);
+        return new Money(this.cantidad.subtract(otro.cantidad), this.moneda);
+    }
+
+    private void validarMoneda(Money otro) {
+        if (!this.moneda.equals(otro.moneda)) {
+            throw new IllegalArgumentException("Monedas distintas: " + this.moneda + " vs " + otro.moneda);
+        }
     }
 
     // Métodos de comparación para reglas de negocio
@@ -47,9 +54,7 @@ public class Money {
     }
 
     public boolean esMayorQue(Money otro) {
-        if (!this.moneda.equals(otro.moneda)) {
-            throw new IllegalArgumentException("No se pueden comparar monedas distintas");
-        }
+        validarMoneda(otro);
         return this.cantidad.compareTo(otro.cantidad) > 0;
     }
 
