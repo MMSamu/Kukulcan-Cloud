@@ -38,14 +38,6 @@ public class Money {
         return new Money(this.cantidad.add(otro.cantidad), this.moneda);
     }
 
-    public Money restar(Money otro) {
-        if (!this.moneda.equals(otro.moneda)) {
-            throw new IllegalArgumentException(
-                    "No se pueden restar monedas distintas: " + this.moneda + " vs " + otro.moneda);
-        }
-        // El constructor de Money ya valida que el resultado no sea negativo (RN-VO-02)
-        return new Money(this.cantidad.subtract(otro.cantidad), this.moneda);
-    }
 
     public Money multiplicar(int factor) {
         return new Money(this.cantidad.multiply(BigDecimal.valueOf(factor)), this.moneda);
