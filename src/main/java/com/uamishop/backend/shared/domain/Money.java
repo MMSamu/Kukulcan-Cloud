@@ -3,7 +3,6 @@ package com.uamishop.backend.shared.domain;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 
-<<<<<<< HEAD
 /**
  * Value Object para manejar dinero de forma segura.
  * Evita problemas de precisión que ocurren con 'double'.
