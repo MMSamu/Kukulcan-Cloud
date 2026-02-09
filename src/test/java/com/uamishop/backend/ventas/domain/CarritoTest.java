@@ -130,7 +130,7 @@ class CarritoTest {
     @Test
     void deberiaBloquearseAlHacerCheckout() {
         Carrito carrito = new Carrito(UUID.randomUUID());
-        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(10.0));
+        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(100.0));
 
         carrito.iniciarCheckout();
 
@@ -140,5 +140,60 @@ class CarritoTest {
         assertThrows(RuntimeException.class, () -> {
             carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(50.0));
         });
+    }
+
+    @Test
+    void noDeberiaPermitirCheckoutSiTotalEsMenorOIgualA50() {
+        // RN-VEN-12: Total debe ser mayor a $50 pesos
+        Carrito carrito = new Carrito(UUID.randomUUID());
+        // Agregamos algo que sume $40 (Menor al límite de $50)
+        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(40.0));
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            carrito.iniciarCheckout();
+        });
+        
+        assertTrue(exception.getMessage().contains("monto mínimo"), 
+            "Debería lanzar error por monto mínimo de compra");
+    }
+
+    @Test
+    void noDeberiaPermitirAbandonarSiNoEstaEnCheckout() {
+        // RN-VEN-14: Solo se puede abandonar si el estado es EN_CHECKOUT
+        Carrito carrito = new Carrito(UUID.randomUUID());
+        
+        // El carrito está ACTIVO por defecto, no debería dejar abandonarlo
+        assertThrows(RuntimeException.class, () -> {
+            carrito.abandonar();
+        }, "No debería permitir abandonar un carrito que no está en checkout");
+    }
+
+    @Test
+    void deberiaPermitirAbandonarSiEstaEnCheckout() {
+        // RN-VEN-14: Flujo correcto de abandono
+        Carrito carrito = new Carrito(UUID.randomUUID());
+        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(100.0));
+        
+        carrito.iniciarCheckout(); // Cambia a EN_CHECKOUT
+        carrito.abandonar();      // Ahora sí es válido
+
+        assertEquals(EstadoCarrito.ABANDONADO, carrito.getEstado());
+    }
+
+    @Test
+    void noDeberiaPermitirDescuentoMayorAl30PorCiento() {
+        // RN-VEN-16: El descuento no puede superar el 30% del subtotal
+        Carrito carrito = new Carrito(UUID.randomUUID());
+        // Compra de $100.00
+        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(100.0)); 
+
+        // El 30% es $30.0. Intentamos aplicar $31.0 (debería fallar)
+        Money descuentoInvalido = Money.pesos(31.0);
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            carrito.aplicarDescuento(descuentoInvalido);
+        });
+
+        assertEquals("El descuento no puede ser mayor al 30% del subtotal", exception.getMessage());
     }
 }

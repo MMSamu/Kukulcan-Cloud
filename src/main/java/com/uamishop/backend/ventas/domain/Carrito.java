@@ -1,5 +1,6 @@
 package com.uamishop.backend.ventas.domain;
 
+import java.math.BigDecimal;
 import com.uamishop.backend.shared.domain.Money;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +83,10 @@ public class Carrito {
     public void iniciarCheckout() {
         validarEstadoActivo();
         if (items.isEmpty()) throw new RuntimeException("No se puede hacer checkout de un carrito vacio");
+        //RN -12 EL TOTAL DEL CARRITO DEBE SER MAYOR A $50
+        if (calcularTotal().getCantidad().compareTo(new BigDecimal("50")) <= 0) {
+            throw new RuntimeException("El monto mínimo de compra es mayor a $50 pesos");
+        }
         this.estado = EstadoCarrito.EN_CHECKOUT;
     }
 
@@ -97,8 +102,9 @@ public class Carrito {
 
     // 7. Abandonar (Revisalo Lau)
     public void abandonar() {
-        if (this.estado == EstadoCarrito.COMPLETADO) {
-            throw new RuntimeException("No se puede abandonar un carrito ya pagado");
+        // RN-VEN-14: Solo se puede abandonar si está en estado EN_CHECKOUT (SE QUITO EL "COMPLETADO")
+        if (this.estado != EstadoCarrito.EN_CHECKOUT) {
+            throw new RuntimeException("Solo se puede abandonar un carrito que está en proceso de checkout");
         }
         this.estado = EstadoCarrito.ABANDONADO;
     }
@@ -108,9 +114,11 @@ public class Carrito {
     public void aplicarDescuento(Money montoDescuento) {
         validarEstadoActivo();
         Money subtotal = calcularSubtotal();
-        // Validamos que no se descuente mas de lo que cuesta el carrito
-        if (montoDescuento.esMayorQue(subtotal)) {
-            throw new RuntimeException("El descuento no puede ser mayor al total de la compra");
+        // Falto calcular el tope del 30% del subtotal (subtotal * 0.30)
+        BigDecimal limite30 = subtotal.getCantidad().multiply(new BigDecimal("0.30"));
+        
+        if (montoDescuento.getCantidad().compareTo(limite30) > 0) {
+            throw new RuntimeException("El descuento no puede ser mayor al 30% del subtotal");
         }
         this.descuento = montoDescuento;
     }
