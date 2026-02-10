@@ -105,6 +105,7 @@ public class Imagen {
      */
     @Override
     public int hashCode() {
+
         return Objects.hash(url, textoAlternativo, orden);
     }
 
