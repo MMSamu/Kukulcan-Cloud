@@ -4,31 +4,33 @@ import com.uamishop.backend.shared.domain.Money;
 import java.util.UUID;
 
 public class ItemCarrito {
-    private UUID id;
-    private UUID productoId;
-    private int cantidad;
-    private Money precioUnitario;
+    private final ItemCarritoId id;
+    private final UUID productoId;
+    private Cantidad cantidad; // Ahora usa el Record
+    private final Money precioUnitario;
 
+    // Constructor: Recibe 'int' pero lo convierte internamente
     public ItemCarrito(UUID productoId, int cantidad, Money precioUnitario) {
-        this.id = UUID.randomUUID();
+        this.id = ItemCarritoId.generar();
         this.productoId = productoId;
-        this.cantidad = cantidad;
+        this.cantidad = new Cantidad(cantidad); // Validación automatica
         this.precioUnitario = precioUnitario;
     }
 
-    public void aumentarCantidad(int cantidadExtra) {
-        this.cantidad += cantidadExtra;
+    public void aumentarCantidad(Cantidad cantidadExtra) {
+        this.cantidad = this.cantidad.sumar(cantidadExtra);
     }
 
-    // Metodo 'Modificar Cantidad' del carrito
-    public void actualizarCantidad(int nuevaCantidad) {
+    public void actualizarCantidad(Cantidad nuevaCantidad) {
         this.cantidad = nuevaCantidad;
     }
 
     public Money subtotal() {
-        return precioUnitario.multiplicar(cantidad);
+        return precioUnitario.multiplicar(cantidad.valor());
     }
 
     public UUID getProductoId() { return productoId; }
-    public int getCantidad() { return cantidad; }
+
+    // Getter devuelve int para facilitar compatibilidad
+    public int getCantidad() { return cantidad.valor(); }
 }
