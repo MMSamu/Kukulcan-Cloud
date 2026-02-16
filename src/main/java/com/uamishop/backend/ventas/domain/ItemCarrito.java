@@ -14,7 +14,7 @@ public class ItemCarrito {
     @Column(name = "producto_id")
     private UUID productoId;
 
-    @Column(name = "cantidad")
+    @Column(name = "cantidad_items")
     private int cantidad; // JPA guarda el número simple
 
     @Embedded
