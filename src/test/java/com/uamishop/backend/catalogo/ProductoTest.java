@@ -5,6 +5,8 @@ import com.uamishop.backend.catalogo.domain.Producto;
 import com.uamishop.backend.shared.domain.Money;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProductoTest {
@@ -12,7 +14,7 @@ class ProductoTest {
     @Test
     void deberiaCrearProductoValido() {
         // Arrange
-        Money precio = Money.pesos(15000);
+        Money precio = Money.pesos(BigDecimal.valueOf(15000));
         CategoriaId categoriaId = CategoriaId.generar();
 
         // Act
@@ -34,7 +36,7 @@ class ProductoTest {
     @Test
     void noDeberiaCrearProductoConPrecioCero() {
         // Arrange
-        Money precio = Money.pesos(0);
+        Money precio = Money.pesos(BigDecimal.valueOf(1500));
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () ->

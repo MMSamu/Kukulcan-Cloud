@@ -4,9 +4,16 @@ import com.uamishop.backend.catalogo.repository.ProductoRepository;
 import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import com.uamishop.backend.catalogo.domain.*;
 import com.uamishop.backend.shared.domain.Money;
+import com.uamishop.backend.catalogo.controller.dto.*;
+import org.springframework.stereotype.Service;
+import com.uamishop.backend.catalogo.repository.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Service
 public class ProductoService {
 
     private final ProductoRepository productoRepository;
@@ -20,61 +27,129 @@ public class ProductoService {
         this.categoriaRepository = categoriaRepository;
     }
 
-    public Producto crear(
-            String nombre,
-            String descripcion,
-            Money precio,
-            CategoriaId categoriaId
-    ) {
+    // =============================
+    // CREAR
+   // =============================
+    public ProductoResponse crear(ProductoRequest request) {
 
-        if (!categoriaRepository.existsById(categoriaId)) {
-            throw new IllegalArgumentException("La categoría no existe");
-        }
+        // 1️⃣ Validar que la categoría exista
+        Categoria categoria = categoriaRepository.findById(
+                new CategoriaId(request.categoriaId())
+        ).orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
 
+        // 2️⃣ Crear el producto usando la fábrica del dominio
         Producto producto = Producto.crear(
-                nombre,
-                descripcion,
-                precio,
-                categoriaId
+                request.nombre(),
+                request.descripcion(),
+                Money.pesos(request.precio()),
+                categoria.getId()
         );
 
-        return productoRepository.save(producto);
+        // 3️⃣ Guardar
+        productoRepository.save(producto);
+
+        // 4️⃣ Retornar response
+        return toResponse(producto);
     }
 
-    public Producto cambiarPrecio(ProductoId id, Money nuevoPrecio) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+    // =============================
+    // BUSCAR TODOS
+    // =============================
+    public ProductoResponse buscarPorId(UUID id){
 
-        producto.cambiarPrecio(nuevoPrecio);
-
-        return productoRepository.save(producto);
+        Producto producto = productoRepository.findById(
+                new ProductoId(id)
+        ).orElseThrow(() -> new RuntimeException("Producno no encontrado"));
+        return toResponse(producto);
     }
 
-    public void activar(ProductoId id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+    // =============================
+    // ACTUALIZAR
+    // =============================
+    public ProductoResponse actualizar(UUID id, ProductoRequest request) {
+
+        Producto producto = productoRepository.findById(
+                new ProductoId(id)
+        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        producto.actualizarNombreYDescripcion(
+                request.nombre(),
+                request.descripcion()
+        );
+
+        if (request.precio() != null) {
+            producto.cambiarPrecio(
+                    Money.pesos(request.precio())
+            );
+        }
+
+        productoRepository.save(producto);
+
+        return toResponse(producto);
+    }
+
+    // =============================
+    // ACTIVAR
+    // =============================
+    public void activar(UUID id) {
+
+        Producto producto = productoRepository.findById(
+                new ProductoId(id)
+        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         producto.activar();
         productoRepository.save(producto);
     }
 
-    public void desactivar(ProductoId id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+    // =============================
+// OBTENER POR ID
+// =============================
+    public ProductoResponse obtenerPorId(UUID id) {
+
+        Producto producto = productoRepository.findById(
+                new ProductoId(id)
+        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        return toResponse(producto);
+    }
+
+    // =============================
+// LISTAR TODOS
+// =============================
+    public List<ProductoResponse> listar() {
+
+        return productoRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // =============================
+    // DESACTIVAR
+    // =============================
+    public void desactivar(UUID id) {
+
+        Producto producto = productoRepository.findById(
+                new ProductoId(id)
+        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         producto.desactivar();
         productoRepository.save(producto);
     }
 
-    public List<Producto> listar() {
-        return productoRepository.findAll();
+    // =============================
+    // MAPPER
+    // =============================
+    private ProductoResponse toResponse(Producto producto) {
+        return new ProductoResponse(
+                producto.getId().valor(),
+                producto.getNombre(),
+                producto.getDescripcion(),
+                producto.getPrecio().getCantidad(),
+                producto.getCategoriaId().valor(),
+                producto.isDisponible()
+        );
     }
 
-    public List<Producto> listarPorCategoria(CategoriaId categoriaId) {
-        return productoRepository.findByCategoriaId(categoriaId);
-    }
-
-    public void eliminar(ProductoId id) {
-        productoRepository.deleteById(id);
-    }
 }
+

@@ -1,5 +1,6 @@
 package com.uamishop.backend.shared.domain;
 
+//import com.uamishop.backend.catalogo.domain.Producto;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -12,6 +13,7 @@ import java.util.Objects;
 public class Money {
     private final BigDecimal cantidad;
     private final String moneda;
+
 
     //Constructor para JPA (protegido para que nadie más lo use)
     protected Money() {
@@ -45,8 +47,8 @@ public class Money {
     }
 
     // Fabrica estática para crear pesos
-    public static Money pesos(double cantidad) {
-        return new Money(BigDecimal.valueOf(cantidad), "MXN");
+    public static Money pesos(BigDecimal cantidad) {
+        return new Money(cantidad, "MXN");
     }
 
     // Metodo para sumar dinero (valida que sea la misma moneda)
@@ -82,6 +84,7 @@ public class Money {
     }
 
     public BigDecimal getCantidad() {
+        //producto.getPrecio().getCantidad();
         return cantidad;
     }
 
@@ -107,7 +110,12 @@ public class Money {
 
     @Override
     public String toString() {
+
         return cantidad + " " + moneda;
     }
 
+    /**public BigDecimal getAmount() {
+
+        return null;
+    }*/
 }

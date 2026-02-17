@@ -22,10 +22,23 @@ public class Categoria {
     }
 
     public void asignarPadre(CategoriaId padreId) {
+
         this.categoriaPadreId = padreId;
     }
 
     public CategoriaId getId() {
         return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public CategoriaId getCategoriaPadreId() {
+        return categoriaPadreId;
     }
 }

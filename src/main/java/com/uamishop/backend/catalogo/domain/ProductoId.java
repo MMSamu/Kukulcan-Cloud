@@ -11,12 +11,13 @@ public class ProductoId {
     }
 
     public static ProductoId generar() {
-        return null;
+        return new ProductoId(UUID.randomUUID());
     }
 
     public UUID valor() {
         return valor;
     }
+
 }
 //public record ProductoId(UUID valor) {
 

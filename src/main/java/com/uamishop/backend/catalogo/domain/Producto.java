@@ -112,6 +112,20 @@ public class Producto {
         );
     }
 
+    public void actualizarNombreYDescripcion(String nombre, String descripcion) {
+
+        if (nombre == null || nombre.length() < 3 || nombre.length() > 100) {
+            throw new IllegalArgumentException("El nombre debe tener entre 3 y 100 caracteres");
+        }
+
+        if (descripcion == null || descripcion.length() > 500) {
+            throw new IllegalArgumentException("La descripción no puede exceder 500 caracteres");
+        }
+
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+    }
+
     /**
      * Cambia el precio del producto aplicando reglas de negocio.
      *
@@ -218,4 +232,6 @@ public class Producto {
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
+
+
 }

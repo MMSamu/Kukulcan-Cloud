@@ -3,10 +3,12 @@ package com.uamishop.backend.catalogo.repository;
 import com.uamishop.backend.catalogo.domain.Producto;
 import com.uamishop.backend.catalogo.domain.ProductoId;
 import com.uamishop.backend.catalogo.domain.CategoriaId;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+@Service
 public interface ProductoRepository {
 
     Producto save(Producto producto);
