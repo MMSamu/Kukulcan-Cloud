@@ -3,10 +3,12 @@ package com.uamishop.backend.orden.domain;
 import com.uamishop.backend.shared.domain.Money;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Aggregate Root para la gestión de órdenes.
@@ -16,13 +18,16 @@ import java.util.Objects;
 @Entity
 @Table(name = "ordenes")
 public class Orden {
-    @EmbeddedId
-    @AttributeOverride(name = "valor", column = @Column(name = "orden_id"))
-    private OrdenId id;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "cliente_id"))
-    private ClienteId clienteId;
+    @Id
+    @Column(name = "id")
+    private UUID id;
+
+    @Column(name = "numero_orden")
+    private String numeroOrden;
+
+    @Column(name = "cliente_id")
+    private UUID clienteId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "orden_id", nullable = false)
@@ -32,64 +37,74 @@ public class Orden {
     private DireccionEnvio direccionEnvio;
 
     @Embedded
+    private ResumenPago estadoPago;
+
+    @Embedded
+    private ResumenPago referenciaPago;
+
+    @Embedded
+    private InfoEnvio infoEnvio;
+
+    @Embedded
+    private Money subtotal;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "cantidad", column = @Column(name = "descuento_monto")),
+            @AttributeOverride(name = "moneda", column = @Column(name = "descuento_moneda"))
+    })
+    private Money descuento;
+
+    @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "cantidad", column = @Column(name = "total_cantidad")),
-            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda"))
+            @AttributeOverride(name = "total_moneda", column = @Column(name = "total_moneda"))
     })
     private Money total;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_actual", nullable = false)
-    private EstadoOrden estadoActual;
+    @Embedded
+    private EstadoOrden estado;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago")
-    private EstadoPago estadoPago;
-
-    @Column(name = "referencia_pago")
-    private String referenciaPago;
-
-    @Column(name = "numero_guia")
-    private String numeroGuia;
+    @Column(name = "fecha_creacion")
+    private LocalDateTime fechaCreacion;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "historial_estados", joinColumns = @JoinColumn(name = "orden_id"))
-    private List<CambioEstado> historialEstados = new ArrayList<>();
+    private List<CambioEstado> historialEstados;
 
     // Constructor sin argumentos requerido por JPA
     protected Orden() {
     }
 
-    private Orden(ClienteId clienteId, List<ItemOrden> items, DireccionEnvio direccionEnvio) {
-        this.id = OrdenId.generar();
-        this.clienteId = Objects.requireNonNull(clienteId, "El ID del cliente no puede ser nulo");
-        this.items = new ArrayList<>(items);
-        this.direccionEnvio = Objects.requireNonNull(direccionEnvio, "La dirección de envío no puede ser nula");
-        this.total = calcularTotal();
-        this.estadoActual = EstadoOrden.PENDIENTE;
-        this.estadoPago = EstadoPago.PENDIENTE;
+    public Orden(UUID clienteId) {
+        this.id = UUID.randomUUID();
+        this.clienteId = clienteId;
+        this.items = new ArrayList<>();
+        this.estado = EstadoOrden.PENDIENTE;
+        this.direccionEnvio = new DireccionEnvio();
+        this.total = Money.pesos(0);
     }
 
     /**
      * Crea una nueva orden validando todas las reglas de negocio.
      * RN-ORD-01: Debe tener al menos un item
      * RN-ORD-02: El total debe ser mayor a cero
+     * RN-ORD-03: El pago debe ser mayor a cero
      * RN-ORD-04: Teléfono de 10 dígitos (validado en DireccionEnvio)
      */
-    public static Orden crear(ClienteId clienteId, List<ItemOrden> items, DireccionEnvio direccionEnvio) {
+    public void crear(UUID clienteId, List<ItemOrden> items, DireccionEnvio direccion, Money pago) {
         // RN-ORD-01: Debe tener al menos un item
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("La orden debe tener al menos un item");
         }
-
-        Orden orden = new Orden(clienteId, items, direccionEnvio);
-
         // RN-ORD-02: El total debe ser mayor a cero
-        if (!orden.total.esPositivo()) {
-            throw new IllegalArgumentException("El total de la orden debe ser mayor a cero");
+        if (!pago.esPositivo()) {
+            throw new IllegalArgumentException("El pago debe ser mayor a cero");
         }
-
-        return orden;
+        // RN-ORD-03: El pago debe ser mayor a cero
+        if (!direccion.esValido()) {
+            throw new IllegalArgumentException("La direccion de envio debe ser valida");
+        }
     }
 
     /**
@@ -99,9 +114,9 @@ public class Orden {
      */
     public void confirmar() {
         // RN-ORD-05: Validar que el estado actual sea PENDIENTE
-        if (this.estadoActual != EstadoOrden.PENDIENTE) {
+        if (this.estado != EstadoOrden.PENDIENTE) {
             throw new IllegalStateException(
-                    "Solo se pueden confirmar órdenes en estado PENDIENTE. Estado actual: " + this.estadoActual);
+                    "Solo se pueden confirmar órdenes en estado PENDIENTE. Estado actual: " + this.estado);
         }
 
         cambiarEstado(EstadoOrden.CONFIRMADA, "Orden confirmada por el cliente");
@@ -114,9 +129,9 @@ public class Orden {
      */
     public void procesarPago(String referenciaPago) {
         // RN-ORD-07: Validar que el estado sea CONFIRMADA
-        if (this.estadoActual != EstadoOrden.CONFIRMADA) {
+        if (this.estado != EstadoOrden.CONFIRMADA) {
             throw new IllegalStateException(
-                    "Solo se puede procesar el pago de órdenes CONFIRMADAS. Estado actual: " + this.estadoActual);
+                    "Solo se puede procesar el pago de órdenes CONFIRMADAS. Estado actual: " + this.estado);
         }
 
         // RN-ORD-08: La referencia de pago no debe estar vacía
@@ -124,8 +139,7 @@ public class Orden {
             throw new IllegalArgumentException("La referencia de pago no puede estar vacía");
         }
 
-        this.referenciaPago = referenciaPago;
-        this.estadoPago = EstadoPago.COMPLETADO;
+        this.referenciaPago = ResumenPago.completado("PAGO", referenciaPago, LocalDateTime.now());
         cambiarEstado(EstadoOrden.PREPARACION, "Pago procesado con referencia: " + referenciaPago);
     }
 
@@ -137,10 +151,10 @@ public class Orden {
      */
     public void marcarEnviada(String numeroGuia) {
         // RN-ORD-10: Validar que el estado sea PREPARACION
-        if (this.estadoActual != EstadoOrden.PREPARACION) {
+        if (this.estado != EstadoOrden.PREPARACION) {
             throw new IllegalStateException(
                     "Solo se pueden marcar como enviadas las órdenes en PREPARACION. Estado actual: "
-                            + this.estadoActual);
+                            + this.estado);
         }
 
         // RN-ORD-11: Se requiere número de guía
@@ -153,7 +167,7 @@ public class Orden {
             throw new IllegalArgumentException("El número de guía debe tener al menos 5 caracteres");
         }
 
-        this.numeroGuia = numeroGuia;
+        this.infoEnvio = new InfoEnvio("", numeroGuia, LocalDateTime.now());
         cambiarEstado(EstadoOrden.ENVIADA, "Orden enviada con guía: " + numeroGuia);
     }
 
@@ -161,9 +175,9 @@ public class Orden {
      * Marca la orden como entregada.
      */
     public void marcarEntregada() {
-        if (this.estadoActual != EstadoOrden.ENVIADA) {
+        if (this.estado != EstadoOrden.ENVIADA) {
             throw new IllegalStateException(
-                    "Solo se pueden marcar como entregadas las órdenes ENVIADAS. Estado actual: " + this.estadoActual);
+                    "Solo se pueden marcar como entregadas las órdenes ENVIADAS. Estado actual: " + this.estado);
         }
 
         cambiarEstado(EstadoOrden.ENTREGADA, "Orden entregada al cliente");
@@ -176,10 +190,10 @@ public class Orden {
      */
     public void cancelar(String motivo) {
         // RN-ORD-14: Validar que no esté ENVIADA o ENTREGADA
-        if (this.estadoActual == EstadoOrden.ENVIADA || this.estadoActual == EstadoOrden.ENTREGADA) {
+        if (this.estado == EstadoOrden.ENVIADA || this.estado == EstadoOrden.ENTREGADA) {
             throw new IllegalStateException(
                     "No se pueden cancelar órdenes que ya han sido enviadas o entregadas. Estado actual: "
-                            + this.estadoActual);
+                            + this.estado);
         }
 
         // RN-ORD-15, RN-ORD-16: El motivo debe tener al menos 10 caracteres
@@ -195,14 +209,14 @@ public class Orden {
      * RN-ORD-06: Registrar el cambio en el historial
      */
     private void cambiarEstado(EstadoOrden nuevoEstado, String motivo) {
-        EstadoOrden estadoAnterior = this.estadoActual;
+        EstadoOrden estadoAnterior = this.estado;
 
         if (!estadoAnterior.puedeTransicionarA(nuevoEstado)) {
             throw new IllegalStateException(
                     String.format("Transición de estado inválida: %s -> %s", estadoAnterior, nuevoEstado));
         }
 
-        this.estadoActual = nuevoEstado;
+        this.estado = nuevoEstado;
 
         // RN-ORD-06: Registrar el cambio en el historial
         CambioEstado cambio = CambioEstado.registrar(estadoAnterior, nuevoEstado, motivo);
@@ -226,11 +240,15 @@ public class Orden {
 
     // Getters
     public OrdenId getId() {
+        return OrdenId.de(id);
+    }
+
+    public UUID getIdValue() { // added for convenience if needed
         return id;
     }
 
     public ClienteId getClienteId() {
-        return clienteId;
+        return ClienteId.de(clienteId);
     }
 
     public List<ItemOrden> getItems() {
@@ -245,24 +263,28 @@ public class Orden {
         return total;
     }
 
-    public EstadoOrden getEstadoActual() {
-        return estadoActual;
+    public EstadoOrden getEstado() {
+        return estado;
     }
 
-    public EstadoPago getEstadoPago() {
+    public ResumenPago getEstadoPago() {
         return estadoPago;
     }
 
     public String getReferenciaPago() {
-        return referenciaPago;
+        return estadoPago.getReferenciaExterna();
     }
 
     public String getNumeroGuia() {
-        return numeroGuia;
+        return infoEnvio.getNumeroGuia();
     }
 
     public List<CambioEstado> getHistorialEstados() {
         return Collections.unmodifiableList(historialEstados);
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 
     @Override

@@ -62,6 +62,15 @@ public class DireccionEnvio {
         return new DireccionEnvio(calle, ciudad, estado, codigoPostal, "México", telefonoContacto);
     }
 
+    public boolean esValido() {
+        return calle != null && !calle.trim().isEmpty() &&
+                ciudad != null && !ciudad.trim().isEmpty() &&
+                estado != null && !estado.trim().isEmpty() &&
+                codigoPostal != null && codigoPostal.matches("\\d{5}") &&
+                pais != null && pais.equals("México") &&
+                telefonoContacto != null && telefonoContacto.matches("\\d{10}");
+    }
+
     public String getCalle() {
         return calle;
     }
