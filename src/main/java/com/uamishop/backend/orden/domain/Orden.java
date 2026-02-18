@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
 import java.util.UUID;
 
 /**
@@ -83,6 +84,7 @@ public class Orden {
         this.estado = EstadoOrden.PENDIENTE;
         this.direccionEnvio = new DireccionEnvio();
         this.total = Money.pesos(0);
+        this.descuento = Money.pesos(0);
     }
 
     /**
@@ -223,6 +225,87 @@ public class Orden {
         this.historialEstados.add(cambio);
     }
 
+    // Getters
+    public OrdenId getId() {
+        return new OrdenId(this.id);
+    }
+
+    public String numeroOrden() {
+        return this.numeroOrden;
+    }
+
+    public UUID getClienteId() {
+        return this.clienteId;
+    }
+
+    public List<ItemOrden> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+
+    public DireccionEnvio direccionEnvio() {
+        return direccionEnvio;
+    }
+
+    public ResumenPago resumenPago() {
+        return estadoPago;
+    }
+
+    public InfoEnvio infoEnvio() {
+        return infoEnvio;
+    }
+
+    public Money calcularSubtotal() {
+        return items.stream()
+                .map(ItemOrden::calcularSubtotal)
+                .reduce(Money.pesos(0), Money::sumar);
+    }
+
+    public void agregarItem(ItemOrden item) {
+        if (item == null) {
+            throw new IllegalArgumentException("El item no puede ser nulo");
+        }
+        this.items.add(item);
+        this.total = calcularTotal();
+    }
+
+    public void aplicarDescuento(Money descuento) {
+        validarEstado();
+        Money subtotal = calcularSubtotal();
+
+        if (!descuento.esPositivo()) {
+            throw new IllegalArgumentException("El descuento debe ser mayor a cero");
+        }
+
+        if (descuento.esMayorQue(subtotal)) {
+            throw new IllegalArgumentException("El descuento no puede ser mayor al subtotal");
+        }
+
+        this.descuento = descuento;
+        this.total = calcularTotal();
+    }
+
+    public void aplicarDescuento(double porcentaje) {
+        if (porcentaje <= 0 || porcentaje > 100) {
+            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+        }
+
+        // Calcular el descuento sobre el subtotal
+        Money subtotal = calcularSubtotal();
+
+        // Usamos el nuevo método porcentaje de Money
+        Money descuentoCalculado = subtotal.porcentaje(porcentaje);
+
+        aplicarDescuento(descuentoCalculado);
+    }
+
+    public Money getDescuento() {
+        return descuento != null ? descuento : Money.pesos(0);
+    }
+
+    public Money getTotal() {
+        return total != null ? total : Money.pesos(0);
+    }
+
     /**
      * Calcula el total de la orden sumando los subtotales de todos los items.
      */
@@ -231,74 +314,36 @@ public class Orden {
             return Money.pesos(0);
         }
 
-        Money total = items.get(0).calcularSubtotal();
-        for (int i = 1; i < items.size(); i++) {
-            total = total.sumar(items.get(i).calcularSubtotal());
+        Money subtotal = calcularSubtotal();
+
+        // Si no hay descuento o es mayor al subtotal (safety check), retornamos
+        // subtotal
+        if (descuento == null) {
+            return subtotal;
         }
-        return total;
+
+        // El total es subtotal - descuento
+        // Nota: Money.restar valida que no quede negativo si así está implementado,
+        // pero nuestra validación en aplicarDescuento ya asegura que descuento <=
+        // subtotal
+        return subtotal.restar(descuento);
     }
 
-    // Getters
-    public OrdenId getId() {
-        return OrdenId.de(id);
+    private void validarEstado() {
+        if (this.estado != EstadoOrden.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se pueden modificar órdenes en estado PENDIENTE. Estado actual: "
+                            + this.estado);
+        }
     }
 
-    public UUID getIdValue() { // added for convenience if needed
-        return id;
-    }
-
-    public ClienteId getClienteId() {
-        return ClienteId.de(clienteId);
-    }
-
-    public List<ItemOrden> getItems() {
-        return Collections.unmodifiableList(items);
-    }
-
-    public DireccionEnvio getDireccionEnvio() {
-        return direccionEnvio;
-    }
-
-    public Money getTotal() {
-        return total;
-    }
-
-    public EstadoOrden getEstado() {
-        return estado;
-    }
-
-    public ResumenPago getEstadoPago() {
-        return estadoPago;
-    }
-
-    public String getReferenciaPago() {
-        return estadoPago.getReferenciaExterna();
-    }
-
-    public String getNumeroGuia() {
-        return infoEnvio.getNumeroGuia();
-    }
-
-    public List<CambioEstado> getHistorialEstados() {
-        return Collections.unmodifiableList(historialEstados);
-    }
-
-    public LocalDateTime getFechaCreacion() {
+    private LocalDateTime fechaCreacion() {
         return fechaCreacion;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        Orden orden = (Orden) o;
-        return Objects.equals(id, orden.id);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }
