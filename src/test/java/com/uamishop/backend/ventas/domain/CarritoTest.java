@@ -153,8 +153,8 @@ class CarritoTest {
             carrito.iniciarCheckout();
         });
         
-        assertTrue(exception.getMessage().contains("monto mínimo"), 
-            "Debería lanzar error por monto mínimo de compra");
+        assertTrue(exception.getMessage().contains("monto minimo"),
+            "Deberia lanzar error por monto minimo de compra");
     }
 
     @Test
