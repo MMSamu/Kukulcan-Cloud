@@ -69,6 +69,13 @@ public class OrdenService {
     }
 
     @Transactional
+    public Orden marcarEnProceso(UUID ordenId) {
+        Orden orden = buscarPorId(ordenId);
+        orden.marcarEnProceso();
+        return ordenRepository.save(orden);
+    }
+
+    @Transactional
     public Orden marcarEntregada(UUID ordenId) {
         Orden orden = buscarPorId(ordenId);
         orden.marcarEntregada();
@@ -82,12 +89,12 @@ public class OrdenService {
      * orden.entregar();
      * return ordenRepository.save(orden);
      * }
-     * 
-     * @Transactional
-     * public Orden cancelar(UUID ordenId) {
-     * Orden orden = buscarPorId(ordenId);
-     * orden.cancelar();
-     * return ordenRepository.save(orden);
-     * }
      */
+
+    @Transactional
+    public Orden cancelar(UUID ordenId, String motivo) {
+        Orden orden = buscarPorId(ordenId);
+        orden.cancelar(motivo);
+        return ordenRepository.save(orden);
+    }
 }

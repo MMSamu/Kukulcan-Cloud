@@ -51,31 +51,24 @@ public class OrdenController {
         return service.procesarPago(clienteId, referenciaPago);
     }
 
-    /*
-     * @PostMapping("/{clienteId}/marcar-en-proceso")
-     * public Orden marcarEnProceso(@PathVariable UUID clienteId) {
-     * return service.marcarEnProceso(clienteId);
-     * }
-     */
+    @PostMapping("/{clienteId}/marcar-en-proceso")
+    public Orden marcarEnProceso(@PathVariable UUID clienteId) {
+        return service.marcarEnProceso(clienteId);
+    }
 
-    /*
-     * @PostMapping("/{clienteId}/marcar-enviada")
-     * public Orden marcarEnviada(@PathVariable UUID clienteId, InfoEnvio infoEnvio)
-     * {
-     * return service.marcarEnviada(clienteId, infoEnvio);
-     * }
-     */
+    @PostMapping("/{clienteId}/marcar-enviada")
+    public Orden marcarEnviada(@PathVariable UUID ordenID, String numeroGuia) {
+        return service.marcarEnviada(ordenID, numeroGuia);
+    }
 
     @PostMapping("/{clienteId}/marcar-entregada")
     public Orden marcarEntregada(@PathVariable UUID clienteId) {
         return service.marcarEntregada(clienteId);
     }
 
-    /*
-     * @PostMapping("/{clienteId}/cancelar")
-     * public Orden cancelar(@PathVariable UUID clienteId, String motivo) {
-     * return service.cancelar(clienteId, motivo);
-     * }
-     */
+    @PostMapping("/{clienteId}/cancelar")
+    public Orden cancelar(@PathVariable UUID clienteId, String motivo) {
+        return service.cancelar(clienteId, motivo);
+    }
 
 }

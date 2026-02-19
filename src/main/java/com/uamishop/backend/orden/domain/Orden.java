@@ -173,6 +173,15 @@ public class Orden {
         cambiarEstado(EstadoOrden.ENVIADA, "Orden enviada con guía: " + numeroGuia);
     }
 
+    public void marcarEnProceso() {
+        if (this.estado != EstadoOrden.CONFIRMADA) {
+            throw new IllegalStateException(
+                    "Solo se pueden marcar como en proceso las órdenes CONFIRMADAS. Estado actual: " + this.estado);
+        }
+
+        cambiarEstado(EstadoOrden.PREPARACION, "Orden en preparación");
+    }
+
     /**
      * Marca la orden como entregada.
      */
