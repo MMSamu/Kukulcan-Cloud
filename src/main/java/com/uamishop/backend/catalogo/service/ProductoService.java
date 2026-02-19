@@ -41,9 +41,10 @@ public class ProductoService {
         Producto producto = Producto.crear(
                 request.nombre(),
                 request.descripcion(),
-                Money.pesos(request.precio()),
+                Money.pesos(request.precio().doubleValue()),
                 categoria.getId()
         );
+
 
         // 3️⃣ Guardar
         productoRepository.save(producto);
@@ -79,7 +80,7 @@ public class ProductoService {
 
         if (request.precio() != null) {
             producto.cambiarPrecio(
-                    Money.pesos(request.precio())
+                    Money.pesos(request.precio().doubleValue())
             );
         }
 

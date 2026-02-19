@@ -61,7 +61,9 @@ public class Producto {
             String nombre,
             String descripcion,
             Money precio,
-            CategoriaId categoriaId
+            CategoriaId categoriaId,
+            boolean disponible,
+            LocalDateTime fechaCreacion
     ) {
         this.id = id;
         this.nombre = nombre;
@@ -69,8 +71,8 @@ public class Producto {
         this.precio = precio;
         this.categoriaId = categoriaId;
         this.imagenes = new ArrayList<>();
-        this.disponible = false;
-        this.fechaCreacion = LocalDateTime.now();
+        this.disponible = disponible;
+        this.fechaCreacion = fechaCreacion;
     }
 
     /**
@@ -108,9 +110,32 @@ public class Producto {
                 nombre,
                 descripcion,
                 precio,
-                categoriaId
+                categoriaId,
+                false,
+                LocalDateTime.now()
         );
     }
+
+    public static Producto reconstruir(
+            ProductoId id,
+            String nombre,
+            String descripcion,
+            Money precio,
+            CategoriaId categoriaId,
+            boolean disponible,
+            LocalDateTime fechaCreacion
+    ) {
+        return new Producto(
+                id,
+                nombre,
+                descripcion,
+                precio,
+                categoriaId,
+                disponible,
+                fechaCreacion
+        );
+    }
+
 
     public void actualizarNombreYDescripcion(String nombre, String descripcion) {
 

@@ -1,9 +1,7 @@
 package com.uamishop.backend.shared.domain;
 
-//import com.uamishop.backend.catalogo.domain.Producto;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /**
  * Value Object para manejar dinero de forma segura.
@@ -14,23 +12,13 @@ public class Money {
     private final BigDecimal cantidad;
     private final String moneda;
 
-
     //Constructor para JPA (protegido para que nadie más lo use)
     protected Money() {
         this.cantidad = null;
         this.moneda = null;
     }
     // Constructor privado
-    public Money(BigDecimal cantidad, String moneda) {
-
-        if (cantidad == null) {
-            throw new IllegalArgumentException("La cantidad no puede ser null");
-        }
-
-        if (moneda == null || moneda.isBlank()) {
-            throw new IllegalArgumentException("La moneda no puede ser null o vacía");
-        }
-
+    private Money(BigDecimal cantidad, String moneda) {
         // RN-VO-02: No se permiten saldos negativos
         if (cantidad.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("No se permiten cantidades negativas: " + cantidad);
@@ -39,16 +27,9 @@ public class Money {
         this.moneda = moneda;
     }
 
-    /**
-     * Fábrica estática genérica.
-     */
-    public static Money of(BigDecimal cantidad, String moneda) {
-        return new Money(cantidad, moneda);
-    }
-
     // Fabrica estática para crear pesos
-    public static Money pesos(BigDecimal cantidad) {
-        return new Money(cantidad, "MXN");
+    public static Money pesos(double cantidad) {
+        return new Money(BigDecimal.valueOf(cantidad), "MXN");
     }
 
     // Metodo para sumar dinero (valida que sea la misma moneda)
@@ -84,38 +65,11 @@ public class Money {
     }
 
     public BigDecimal getCantidad() {
-        //producto.getPrecio().getCantidad();
         return cantidad;
     }
 
     public String getMoneda() {
         return moneda;
     }
-
-    /**
-     * equals y hashCode obligatorios en Value Objects
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Money money)) return false;
-        return cantidad.equals(money.cantidad) &&
-                moneda.equals(money.moneda);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(cantidad, moneda);
-    }
-
-    @Override
-    public String toString() {
-
-        return cantidad + " " + moneda;
-    }
-
-    /**public BigDecimal getAmount() {
-
-        return null;
-    }*/
 }
+

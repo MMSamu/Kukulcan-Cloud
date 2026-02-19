@@ -14,7 +14,7 @@ class ProductoTest {
     @Test
     void deberiaCrearProductoValido() {
         // Arrange
-        Money precio = Money.pesos(BigDecimal.valueOf(15000));
+        Money precio = Money.pesos(15000);
         CategoriaId categoriaId = CategoriaId.generar();
 
         // Act
@@ -36,7 +36,7 @@ class ProductoTest {
     @Test
     void noDeberiaCrearProductoConPrecioCero() {
         // Arrange
-        Money precio = Money.pesos(BigDecimal.valueOf(1500));
+        Money precio = Money.pesos(0);
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () ->
