@@ -260,3 +260,6 @@ public class Producto {
 
 
 }
+
+
+//checando errores
