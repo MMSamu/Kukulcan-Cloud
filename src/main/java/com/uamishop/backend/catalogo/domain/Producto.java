@@ -1,5 +1,5 @@
 package com.uamishop.backend.catalogo.domain;
-
+//haciendo prueba
 import com.uamishop.backend.shared.domain.Money;
 
 import java.time.LocalDateTime;
