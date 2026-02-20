@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/orden")
+@RequestMapping("/api/ordenes")
 
 public class OrdenController {
 

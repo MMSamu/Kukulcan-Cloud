@@ -1,12 +1,14 @@
 package com.uamishop.backend.orden.service;
 
-import com.uamishop.backend.shared.domain.Money;
+//import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.shared.exception.DomainException;
-import com.uamishop.backend.ventas.domain.Carrito;
+//import com.uamishop.backend.ventas.domain.Carrito;
 //import com.uamishop.backend.ventas.domain.CarritoId;
-import com.uamishop.backend.orden.domain.DireccionEnvio;
+//import com.uamishop.backend.ventas.repository.CarritoJpaRepository;
+//import com.uamishop.backend.ventas.domain.CarritoId;
+//import com.uamishop.backend.orden.domain.DireccionEnvio;
 import com.uamishop.backend.orden.domain.Orden;
-import com.uamishop.backend.orden.domain.OrdenId;
+//import com.uamishop.backend.orden.domain.OrdenId;
 import com.uamishop.backend.orden.repository.OrdenJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +31,14 @@ public class OrdenService {
         return ordenRepository.save(orden);
     }
 
-    /*
-     * @Transactional
-     * public Orden crearDesdeCarrito(CarritoId carritoId, DireccionEnvio
-     * direccionEnvio) {
-     * 
-     * }
-     */
+    // @Transactional
+    // public Orden crearDesdeCarrito(CarritoId carritoId, DireccionEnvio
+    // direccionEnvio) {
+    // Carrito carrito = CarritoJpaRepository.findById(carritoId)
+    // .orElseThrow(() -> new DomainException("Carrito no encontrado"));
+    // Orden orden = new Orden(carrito, direccionEnvio);
+    // return ordenRepository.save(orden);
+    // }
 
     @Transactional(readOnly = true)
     public Orden buscarPorId(UUID clienteId) {
@@ -81,15 +84,6 @@ public class OrdenService {
         orden.marcarEntregada();
         return ordenRepository.save(orden);
     }
-
-    /*
-     * @Transactional
-     * public Orden entregar(UUID ordenId) {
-     * Orden orden = buscarPorId(ordenId);
-     * orden.entregar();
-     * return ordenRepository.save(orden);
-     * }
-     */
 
     @Transactional
     public Orden cancelar(UUID ordenId, String motivo) {
