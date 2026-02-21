@@ -61,7 +61,9 @@ public class Producto {
             String nombre,
             String descripcion,
             Money precio,
-            CategoriaId categoriaId
+            CategoriaId categoriaId,
+            boolean disponible,
+            LocalDateTime fechaCreacion
     ) {
         this.id = id;
         this.nombre = nombre;
@@ -69,8 +71,8 @@ public class Producto {
         this.precio = precio;
         this.categoriaId = categoriaId;
         this.imagenes = new ArrayList<>();
-        this.disponible = false;
-        this.fechaCreacion = LocalDateTime.now();
+        this.disponible = disponible;
+        this.fechaCreacion = fechaCreacion;
     }
 
     /**
@@ -108,8 +110,45 @@ public class Producto {
                 nombre,
                 descripcion,
                 precio,
-                categoriaId
+                categoriaId,
+                false,
+                LocalDateTime.now()
         );
+    }
+
+    public static Producto reconstruir(
+            ProductoId id,
+            String nombre,
+            String descripcion,
+            Money precio,
+            CategoriaId categoriaId,
+            boolean disponible,
+            LocalDateTime fechaCreacion
+    ) {
+        return new Producto(
+                id,
+                nombre,
+                descripcion,
+                precio,
+                categoriaId,
+                disponible,
+                fechaCreacion
+        );
+    }
+
+
+    public void actualizarNombreYDescripcion(String nombre, String descripcion) {
+
+        if (nombre == null || nombre.length() < 3 || nombre.length() > 100) {
+            throw new IllegalArgumentException("El nombre debe tener entre 3 y 100 caracteres");
+        }
+
+        if (descripcion == null || descripcion.length() > 500) {
+            throw new IllegalArgumentException("La descripción no puede exceder 500 caracteres");
+        }
+
+        this.nombre = nombre;
+        this.descripcion = descripcion;
     }
 
     /**
@@ -218,4 +257,9 @@ public class Producto {
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
+
+
 }
+
+
+//checando errores
