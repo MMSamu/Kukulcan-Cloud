@@ -54,17 +54,6 @@ public class ProductoService {
     }
 
     // =============================
-    // BUSCAR TODOS
-    // =============================
-    public ProductoResponse buscarPorId(UUID id){
-
-        Producto producto = productoRepository.findById(
-                new ProductoId(id)
-        ).orElseThrow(() -> new RuntimeException("Producno no encontrado"));
-        return toResponse(producto);
-    }
-
-    // =============================
     // ACTUALIZAR
     // =============================
     public ProductoResponse actualizar(UUID id, ProductoRequest request) {
