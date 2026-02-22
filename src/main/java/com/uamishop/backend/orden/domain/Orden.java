@@ -385,11 +385,6 @@ public class Orden {
         }
     }
 
-    // Devuelve la fecha de creación de la orden
-    private LocalDateTime fechaCreacion() {
-        return fechaCreacion;
-    }
-
     // Devuelve el hash code de la orden
     @Override
     public int hashCode() {

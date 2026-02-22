@@ -3,8 +3,6 @@ package com.uamishop.backend.catalogo.domain;
 import com.uamishop.backend.shared.domain.Money;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProductoTest {
@@ -20,8 +18,7 @@ class ProductoTest {
                 "Laptop",
                 "Laptop gamer",
                 precio,
-                categoriaId
-        );
+                categoriaId);
 
         // Assert
         assertNotNull(producto);
@@ -37,13 +34,10 @@ class ProductoTest {
         Money precio = Money.pesos(0);
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () ->
-                Producto.crear(
-                        "Mouse",
-                        "Mouse gamer",
-                        precio,
-                        CategoriaId.generar()
-                )
-        );
+        assertThrows(IllegalArgumentException.class, () -> Producto.crear(
+                "Mouse",
+                "Mouse gamer",
+                precio,
+                CategoriaId.generar()));
     }
 }
