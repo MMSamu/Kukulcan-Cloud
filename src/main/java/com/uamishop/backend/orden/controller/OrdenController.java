@@ -2,15 +2,12 @@ package com.uamishop.backend.orden.controller;
 
 import com.uamishop.backend.orden.domain.*;
 import com.uamishop.backend.orden.service.OrdenService;
-import com.uamishop.backend.orden.controller.dto.CancelacionRequest;
-import com.uamishop.backend.orden.controller.dto.EnvioRequest;
-import com.uamishop.backend.orden.controller.dto.OrdenRequest;
-import com.uamishop.backend.orden.controller.dto.PagoRequest;
-import com.uamishop.backend.orden.controller.dto.CancelacionResponseDTO;
-import com.uamishop.backend.orden.controller.dto.EnvioResponseDTO;
-import com.uamishop.backend.orden.controller.dto.PagoResponseDTO;
-import com.uamishop.backend.orden.controller.dto.OrdenResponseDTO;
+import com.uamishop.backend.orden.controller.dto.*;
 import com.uamishop.backend.shared.exception.ApiError;
+import com.uamishop.backend.ventas.domain.CarritoId;
+
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,8 +45,10 @@ public class OrdenController {
 
     @PostMapping
     public ResponseEntity<OrdenResponseDTO> crear(@Valid @RequestBody OrdenRequest request) {
-        Orden orden = ordenService.crear(request.clienteId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ordenService.crear(orden));
+        // Crear una orden
+        Orden orden = ordenService.crear(request.clienteId(), null);
+        // Devolver la orden creada
+        return ResponseEntity.status(HttpStatus.CREATED).body(OrdenResponseDTO.fromDomain(orden));
     }
 
     @Operation(summary = "Crear una orden desde el carrito", description = "Crea una orden desde el carrito de un cliente")
@@ -61,11 +60,22 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al crear la orden", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Crear una orden desde el carrito
     @PostMapping("/{id}/orden")
-    public Orden crearDesdeCarrito(@PathVariable UUID id, String direccionEnvio) {
-        return ordenService.crearDesdeCarrito(new OrdenId(id), direccionEnvio);
+    public ResponseEntity<OrdenResponseDTO> crearDesdeCarrito(@PathVariable UUID id,
+            @Valid @RequestBody DireccionEnvioRequest request) {
+        // Crear una dirección de envío
+        DireccionEnvio direccion = DireccionEnvio.crear(
+                request.calle(),
+                request.ciudad(),
+                request.estado(),
+                request.codigoPostal(),
+                request.telefonoContacto());
+        Orden orden = ordenService.crearDesdeCarrito(new CarritoId(id), direccion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(OrdenResponseDTO.fromDomain(orden));
     }
 
+    // Buscar una orden por su ID
     @Operation(summary = "Buscar por ID", description = "Busca una orden por su ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden encontrada exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -75,11 +85,13 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al buscar la orden", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Buscar una orden por su ID
     @GetMapping("/{id}")
-    public Orden buscarPorId(@PathVariable UUID clienteId) {
-        return ordenService.buscarPorId(clienteId);
+    public ResponseEntity<OrdenResponseDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.buscarPorId(id)));
     }
 
+    // Buscar todas las ordenes
     @Operation(summary = "Buscar todas las ordenes", description = "Busca todas las ordenes")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Ordenes encontradas exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -89,11 +101,17 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al buscar las ordenes", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Buscar todas las ordenes
     @GetMapping
-    public List<Orden> buscarTodas() {
-        return ordenService.buscarTodas();
+    public ResponseEntity<List<OrdenResponseDTO>> buscarTodas() {
+        List<OrdenResponseDTO> response = ordenService.buscarTodas()
+                .stream()
+                .map(OrdenResponseDTO::fromDomain)
+                .toList();
+        return ResponseEntity.ok(response);
     }
 
+    // Confirmar una orden
     @Operation(summary = "Confirmar una orden", description = "Confirma una orden")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden confirmada exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -103,11 +121,13 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al confirmar la orden", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Confirmar una orden
     @PostMapping("/{clienteId}/confirmar")
-    public Orden confirmar(@PathVariable UUID clienteId) {
-        return ordenService.confirmar(clienteId);
+    public ResponseEntity<OrdenResponseDTO> confirmar(@PathVariable UUID clienteId) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.confirmar(clienteId)));
     }
 
+    // Procesar pago
     @Operation(summary = "Procesar pago", description = "Procesa el pago de una orden")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Pago procesado exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -117,11 +137,15 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al procesar el pago", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Procesar pago
     @PostMapping("/{clienteId}/procesar-pago")
-    public Orden procesarPago(@PathVariable UUID clienteId, String referenciaPago) {
-        return ordenService.procesarPago(clienteId, referenciaPago);
+    public ResponseEntity<OrdenResponseDTO> procesarPago(@PathVariable UUID clienteId,
+            @RequestBody PagoRequest request) {
+        return ResponseEntity
+                .ok(OrdenResponseDTO.fromDomain(ordenService.procesarPago(clienteId, request.referenciaPago())));
     }
 
+    // Marcar como en proceso
     @Operation(summary = "Marcar como en proceso", description = "Marca una orden como en proceso")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden marcada como en proceso exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -131,11 +155,13 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al marcar la orden como en proceso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
+    // Marcar como en proceso
     @PostMapping("/{clienteId}/marcar-en-proceso")
-    public Orden marcarEnProceso(@PathVariable UUID clienteId) {
-        return ordenService.marcarEnProceso(clienteId);
+    public ResponseEntity<OrdenResponseDTO> marcarEnProceso(@PathVariable UUID clienteId) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.marcarEnProceso(clienteId)));
     }
 
+    // Marcar como enviada
     @Operation(summary = "Marcar como enviada", description = "Marca una orden como enviada")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden marcada como enviada exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -145,11 +171,13 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al marcar la orden como enviada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
-    @PostMapping("/{clienteId}/marcar-enviada")
-    public Orden marcarEnviada(@PathVariable UUID ordenID, String numeroGuia) {
-        return ordenService.marcarEnviada(ordenID, numeroGuia);
+    // Marcar como enviada
+    @PostMapping("/{id}/marcar-enviada")
+    public ResponseEntity<OrdenResponseDTO> marcarEnviada(@PathVariable UUID id, @RequestBody EnvioRequest request) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.marcarEnviada(id, request.numeroGuia())));
     }
 
+    // Marcar como entregada
     @Operation(summary = "Marcar como entregada", description = "Marca una orden como entregada")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden marcada como entregada exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -159,11 +187,13 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al marcar la orden como entregada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
-    @PostMapping("/{clienteId}/marcar-entregada")
-    public Orden marcarEntregada(@PathVariable UUID clienteId) {
-        return ordenService.marcarEntregada(clienteId);
+    // Marcar como entregada
+    @PostMapping("/{id}/marcar-entregada")
+    public ResponseEntity<OrdenResponseDTO> marcarEntregada(@PathVariable UUID id) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.marcarEntregada(id)));
     }
 
+    // Cancelar una orden
     @Operation(summary = "Cancelar una orden", description = "Cancela una orden")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden cancelada exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenResponseDTO.class))),
@@ -173,9 +203,10 @@ public class OrdenController {
             @ApiResponse(responseCode = "500", description = "Error al cancelar la orden", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
     })
 
-    @PostMapping("/{clienteId}/cancelar")
-    public Orden cancelar(@PathVariable UUID clienteId, String motivo) {
-        return ordenService.cancelar(clienteId, motivo);
+    // Cancelar una orden
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<OrdenResponseDTO> cancelar(@PathVariable UUID id, @RequestBody CancelacionRequest request) {
+        return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.cancelar(id, request.motivo())));
     }
 
 }
