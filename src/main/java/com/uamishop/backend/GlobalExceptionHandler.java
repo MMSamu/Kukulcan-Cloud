@@ -2,6 +2,7 @@ package com.uamishop.backend;
 
 import com.uamishop.backend.shared.exception.ApiError;
 import com.uamishop.backend.shared.exception.BusinessRuleException;
+import com.uamishop.backend.shared.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -64,5 +65,54 @@ public class GlobalExceptionHandler {
             return ((ServletWebRequest) request).getRequest().getRequestURI();
         }
         return "Desconocido";
+    }
+
+    /**
+     * * @brief Maneja excepciones cuando no se encuentra un carrito o producto.
+     * HTTP 404 Not Found
+     */
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        ApiError apiError = new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                getPath(request)
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * * @brief Maneja conflictos, como intentar modificar un carrito que ya está COMPLETADO.
+     * HTTP 409 Conflict
+     */
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleConflictException(IllegalStateException ex, WebRequest request) {
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                "Conflict - Estado no válido para la operación",
+                ex.getMessage(),
+                getPath(request)
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * * @brief Atrapa cualquier otro error inesperado del servidor.
+     * HTTP 500 Internal Server Error
+     */
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleGlobalException(Exception ex, WebRequest request) {
+        ex.printStackTrace();
+        ApiError apiError = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "Ocurrió un error inesperado en el servidor",
+                getPath(request)
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
