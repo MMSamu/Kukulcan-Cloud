@@ -17,8 +17,11 @@ public class Categoria {
     }
 
     public void actualizar(String nombre, String descripcion) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
+        if(nombre == null || nombre.isBlank()){
+            throw new IllegalArgumentException("El nombre no puede estar vacio");
+        }
+        /**this.nombre = nombre;
+        this.descripcion = descripcion;*/
     }
 
     public void asignarPadre(CategoriaId padreId) {

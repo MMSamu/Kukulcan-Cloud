@@ -4,6 +4,8 @@ import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import com.uamishop.backend.catalogo.domain.Categoria;
 import com.uamishop.backend.catalogo.domain.CategoriaId;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.uamishop.backend.catalogo.controller.dto.CategoriaRequest;
 import com.uamishop.backend.catalogo.controller.dto.CategoriaResponse;
 
@@ -43,7 +45,7 @@ public class CategoriaService {
 
         Categoria categoria = categoriaRepository.findById(
                 new CategoriaId(id)
-        ).orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        ).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoría no encontrada"));
 
         return toResponse(categoria);
     }
@@ -55,7 +57,7 @@ public class CategoriaService {
 
         Categoria categoria = categoriaRepository.findById(
                 new CategoriaId(id)
-        ).orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        ).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         categoria.actualizar(
                 request.nombre(),

@@ -3,6 +3,8 @@ package com.uamishop.backend.catalogo.controller;
 import com.uamishop.backend.catalogo.service.ProductoService;
 import com.uamishop.backend.catalogo.controller.dto.ProductoRequest;
 import com.uamishop.backend.catalogo.controller.dto.ProductoResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,10 +22,16 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductoResponse> crear(@RequestBody ProductoRequest request) {
+    public ResponseEntity<ProductoResponse> crear(
+            @Valid @RequestBody ProductoRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productoService.crear(request));
+    }
+    /**public ResponseEntity<ProductoResponse> crear(@RequestBody ProductoRequest request) {
         ProductoResponse response = productoService.crear(request);
         return ResponseEntity.ok(response);
-    }
+    }*/
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductoResponse> obtenerPorId(@PathVariable UUID id) {
@@ -39,7 +47,7 @@ public class ProductoController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> actualizar(
             @PathVariable UUID id,
-            @RequestBody ProductoRequest request
+            @Valid @RequestBody ProductoRequest request
     ) {
         productoService.actualizar(id, request);
         return ResponseEntity.noContent().build();
