@@ -13,7 +13,8 @@ import java.util.UUID;
 
 /**
  * Aggregate Root para la gestión de órdenes.
- * Implementa todas las reglas de negocio relacionadas con el ciclo de vida de
+ * Se encarga de todas las reglas de negocio relacionadas con el ciclo de vida
+ * de
  * una orden.
  */
 @Entity
@@ -91,6 +92,7 @@ public class Orden {
         this.direccionEnvio = direccionEnvio;
         this.total = Money.pesos(0);
         this.descuento = Money.pesos(0);
+        this.historialEstados = new ArrayList<>();
     }
 
     /**
@@ -229,12 +231,13 @@ public class Orden {
      */
     private void cambiarEstado(EstadoOrden nuevoEstado, String motivo) {
         EstadoOrden estadoAnterior = this.estado;
-
+        // Si el estado anterior no puede transicionar al nuevo estado, lanza una
+        // excepción
         if (!estadoAnterior.puedeTransicionarA(nuevoEstado)) {
             throw new IllegalStateException(
                     String.format("Transición de estado inválida: %s -> %s", estadoAnterior, nuevoEstado));
         }
-
+        // Cambia el estado a nuevo estado
         this.estado = nuevoEstado;
 
         // Registra el cambio en el historial
@@ -310,8 +313,9 @@ public class Orden {
         if (descuento.esMayorQue(subtotal)) {
             throw new IllegalArgumentException("El descuento no puede ser mayor al subtotal");
         }
-
+        // Aplica el descuento a la orden
         this.descuento = descuento;
+        // Calcula el total de la orden
         this.total = calcularTotal();
     }
 
@@ -327,7 +331,7 @@ public class Orden {
 
         // Calcula el descuento sobre el subtotal
         Money descuentoCalculado = subtotal.porcentaje(porcentaje);
-
+        // Aplica el descuento a la orden
         aplicarDescuento(descuentoCalculado);
     }
 
@@ -345,13 +349,15 @@ public class Orden {
      * Calcula el total de la orden sumando los subtotales de todos los items.
      */
     private Money calcularTotal() {
+        // Si no hay items, devolvemos 0
         if (items.isEmpty()) {
             return Money.pesos(0);
         }
 
+        // Calculamos el subtotal de la orden
         Money subtotal = calcularSubtotal();
 
-        // Si no hay descuento o es mayor al subtotal (safety check), retornamos
+        // Si no hay descuento o es mayor al subtotal (safety check), devolvemos
         // subtotal
         if (descuento == null) {
             return subtotal;

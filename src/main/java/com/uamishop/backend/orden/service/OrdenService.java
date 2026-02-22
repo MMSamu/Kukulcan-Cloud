@@ -4,12 +4,9 @@ package com.uamishop.backend.orden.service;
 import com.uamishop.backend.shared.exception.DomainException;
 import com.uamishop.backend.ventas.domain.Carrito;
 import com.uamishop.backend.ventas.domain.CarritoId;
-//import com.uamishop.backend.ventas.domain.ItemCarrito;
 import com.uamishop.backend.ventas.repository.CarritoJpaRepository;
-//import com.uamishop.backend.orden.domain.ItemOrden;
 import com.uamishop.backend.orden.domain.DireccionEnvio;
 import com.uamishop.backend.orden.domain.Orden;
-//import com.uamishop.backend.orden.domain.OrdenId;
 import com.uamishop.backend.orden.repository.OrdenJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,9 +32,9 @@ public class OrdenService {
 
     // Crea una nueva orden
     @Transactional
-    public Orden crear(UUID clienteId) {
+    public Orden crear(UUID clienteId, DireccionEnvio direccionEnvio) {
         // Crea una nueva orden
-        Orden orden = new Orden(clienteId);
+        Orden orden = new Orden(clienteId, direccionEnvio);
         // Guarda la orden
         return ordenRepository.save(orden);
     }
@@ -52,16 +49,15 @@ public class OrdenService {
         // 2. Construir la Orden con los datos del Carrito
         Orden orden = new Orden(carrito.getClienteId(), direccionEnvio);
 
-        // for (ItemCarrito itemCarrito : carrito.getItems()) {
-        // ItemOrden itemOrden = ItemOrden.crear(
-        // itemCarrito.getProductoId(),
-        // "Producto", // nombre: ItemCarrito no almacena nombre; ajusta si está
-        // disponible
-        // null, // sku: ídem
-        // itemCarrito.getCantidad(),
-        // itemCarrito.getPrecioUnitario());
-        // orden.agregarItem(itemOrden);
-        // }
+        for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
+            com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
+                    itemCarrito.getProductoId(),
+                    itemCarrito.getNombreProducto(),
+                    itemCarrito.getSku(),
+                    itemCarrito.getCantidad(),
+                    itemCarrito.getPrecioUnitario());
+            orden.agregarItem(itemOrden);
+        }
 
         // 3. Aplicar descuento si existía en el carrito
         if (carrito.getDescuento() != null && carrito.getDescuento().esPositivo()) {

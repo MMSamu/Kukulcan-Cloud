@@ -9,27 +9,41 @@ import java.util.UUID;
 @Table(name = "items_carrito")
 public class ItemCarrito {
 
+    // Identificador único del item (no del producto, sino de la línea en el
+    // carrito)
     @Id
-    private UUID id; // Identificador único del item (no del producto, sino de la línea en el
-                     // carrito)
+    private UUID id;
 
+    // Referencia al producto (solo su ID, no toda la entidad)
     @Column(name = "producto_id")
-    private UUID productoId; // Referencia al producto (solo su ID, no toda la entidad)
+    private UUID productoId;
 
+    // JPA guarda el número simple
     @Column(name = "cantidad_items")
-    private int cantidad; // JPA guarda el número simple
+    private int cantidad;
 
+    // Nombre del producto
+    @Column(name = "nombre_producto")
+    private String nombreProducto;
+
+    // SKU del producto
+    @Column(name = "sku")
+    private String sku;
+
+    // Precio unitario del producto
     @Embedded
-    private Money precioUnitario; // Precio unitario del producto
+    private Money precioUnitario;
 
     // Constructor vacio obligatorio para JPA
     protected ItemCarrito() {
     }
 
     // Constructor para crear un nuevo item en el carrito
-    public ItemCarrito(UUID productoId, int cantidad, Money precioUnitario) {
+    public ItemCarrito(UUID productoId, String nombreProducto, String sku, int cantidad, Money precioUnitario) {
         this.id = UUID.randomUUID();
         this.productoId = productoId;
+        this.nombreProducto = nombreProducto;
+        this.sku = sku;
         // Validamos usando Record, pero guardamos el valor primitivo
         this.cantidad = new Cantidad(cantidad).valor();
         this.precioUnitario = precioUnitario;
@@ -60,5 +74,17 @@ public class ItemCarrito {
 
     public int getCantidad() {
         return cantidad;
+    }
+
+    public String getNombreProducto() {
+        return nombreProducto;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public Money getPrecioUnitario() {
+        return precioUnitario;
     }
 }

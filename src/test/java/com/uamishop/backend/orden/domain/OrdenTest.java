@@ -10,7 +10,8 @@ class OrdenTest {
 
     @Test
     void testAplicarDescuentoMontoFijo() {
-        Orden orden = new Orden(UUID.randomUUID());
+        Orden orden = new Orden(UUID.randomUUID(),
+                DireccionEnvio.crear("Calle 1", "Ciudad 1", "Estado 1", "12345", "5512345678"));
         ItemOrden item = ItemOrden.crear(UUID.randomUUID(), "Producto 1", "SKU1", 1, Money.pesos(100));
         orden.agregarItem(item);
 
@@ -27,7 +28,8 @@ class OrdenTest {
 
     @Test
     void testAplicarDescuentoPorcentaje() {
-        Orden orden = new Orden(UUID.randomUUID());
+        Orden orden = new Orden(UUID.randomUUID(),
+                DireccionEnvio.crear("Calle 1", "Ciudad 1", "Estado 1", "12345", "5512345678"));
         ItemOrden item = ItemOrden.crear(UUID.randomUUID(), "Producto 1", "SKU1", 1, Money.pesos(200));
         orden.agregarItem(item);
 
@@ -41,7 +43,8 @@ class OrdenTest {
 
     @Test
     void testDescuentoMayorQueSubtotal() {
-        Orden orden = new Orden(UUID.randomUUID());
+        Orden orden = new Orden(UUID.randomUUID(),
+                DireccionEnvio.crear("Calle 1", "Ciudad 1", "Estado 1", "12345", "5512345678"));
         ItemOrden item = ItemOrden.crear(UUID.randomUUID(), "Producto 1", "SKU1", 1, Money.pesos(50));
         orden.agregarItem(item);
 
@@ -54,7 +57,8 @@ class OrdenTest {
 
     @Test
     void testPorcentajeInvalido() {
-        Orden orden = new Orden(UUID.randomUUID());
+        Orden orden = new Orden(UUID.randomUUID(),
+                DireccionEnvio.crear("Calle 1", "Ciudad 1", "Estado 1", "12345", "5512345678"));
 
         assertThrows(IllegalArgumentException.class, () -> {
             orden.aplicarDescuento(-5.0);
