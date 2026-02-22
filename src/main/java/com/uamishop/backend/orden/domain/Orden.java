@@ -82,17 +82,6 @@ public class Orden {
     protected Orden() {
     }
 
-    // Constructor para crear una nueva orden
-    public Orden(UUID clienteId) {
-        this.id = UUID.randomUUID();
-        this.clienteId = clienteId;
-        this.items = new ArrayList<>();
-        this.estado = EstadoOrden.PENDIENTE;
-        this.direccionEnvio = new DireccionEnvio();
-        this.total = Money.pesos(0);
-        this.descuento = Money.pesos(0);
-    }
-
     // Constructor para crear una nueva orden con dirección de envío
     public Orden(UUID clienteId, DireccionEnvio direccionEnvio) {
         this.id = UUID.randomUUID();
@@ -258,7 +247,7 @@ public class Orden {
         return new OrdenId(this.id);
     }
 
-    public String numeroOrden() {
+    public String getNumeroOrden() {
         return this.numeroOrden;
     }
 
@@ -274,15 +263,15 @@ public class Orden {
         return Collections.unmodifiableList(items);
     }
 
-    public DireccionEnvio direccionEnvio() {
+    public DireccionEnvio getDireccionEnvio() {
         return direccionEnvio;
     }
 
-    public ResumenPago resumenPago() {
+    public ResumenPago getResumenPago() {
         return estadoPago;
     }
 
-    public InfoEnvio infoEnvio() {
+    public InfoEnvio getInfoEnvio() {
         return infoEnvio;
     }
 
@@ -383,6 +372,14 @@ public class Orden {
                     "Solo se pueden modificar órdenes en estado PENDIENTE. Estado actual: "
                             + this.estado);
         }
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public List<CambioEstado> getHistorialEstados() {
+        return historialEstados;
     }
 
     // Devuelve el hash code de la orden
