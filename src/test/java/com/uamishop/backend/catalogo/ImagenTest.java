@@ -1,5 +1,6 @@
-package com.uamishop.backend.catalogo.domain;
+package com.uamishop.backend.catalogo;
 
+import com.uamishop.backend.catalogo.domain.Imagen;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -17,15 +17,31 @@ public class Categoria {
     }
 
     public void actualizar(String nombre, String descripcion) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
+        if(nombre == null || nombre.isBlank()){
+            throw new IllegalArgumentException("El nombre no puede estar vacio");
+        }
+        /**this.nombre = nombre;
+        this.descripcion = descripcion;*/
     }
 
     public void asignarPadre(CategoriaId padreId) {
+
         this.categoriaPadreId = padreId;
     }
 
     public CategoriaId getId() {
         return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public CategoriaId getCategoriaPadreId() {
+        return categoriaPadreId;
     }
 }
