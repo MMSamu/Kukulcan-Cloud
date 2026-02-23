@@ -15,6 +15,12 @@ public class ItemCarrito {
     @Column(name = "producto_id")
     private UUID productoId; // Referencia al producto (solo su ID, no toda la entidad)
 
+    @Column(name = "nombre_producto")
+    private String nombreProducto;
+
+    @Column(name = "sku")
+    private String sku;
+
     @Column(name = "cantidad_items")
     private int cantidad; // JPA guarda el número simple
 
@@ -28,6 +34,8 @@ public class ItemCarrito {
     public ItemCarrito(UUID productoId, int cantidad, Money precioUnitario) {
         this.id = UUID.randomUUID();
         this.productoId = productoId;
+        this.nombreProducto = nombreProducto;
+        this.sku = sku;
         // Validamos usando Record, pero guardamos el valor primitivo
         this.cantidad = new Cantidad(cantidad).valor();
         this.precioUnitario = precioUnitario;
@@ -50,6 +58,23 @@ public class ItemCarrito {
     }
 
     // Getters
-    public UUID getProductoId() { return productoId; }
-    public int getCantidad() { return cantidad; }
+    public UUID getProductoId() { 
+        return productoId; 
+    }
+
+    public String getNombreProducto() { 
+        return nombreProducto; 
+    }
+
+    public String getSku() { 
+        return sku; 
+    }                       
+
+    public int getCantidad() { 
+        return cantidad; 
+    }
+    
+    public Money getPrecioUnitario() { 
+        return precioUnitario; 
+    }
 }

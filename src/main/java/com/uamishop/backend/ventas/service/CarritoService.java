@@ -21,12 +21,13 @@ public class CarritoService {
         this.carritoRepository = carritoRepository;
     }
 
-
     @Transactional // Permite manejar la transacción de forma automática
     public Carrito crear(UUID clienteId) {
-        // Crea un nuevo carrito de compras para un cliente específico y lo guarda en la base de datos
+        // Crea un nuevo carrito de compras para un cliente específico y lo guarda en la
+        // base de datos
         Carrito carrito = new Carrito(clienteId);
-        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el carrito creado
+        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el
+        // carrito creado
         return carritoRepository.save(carrito);
     }
 
@@ -42,9 +43,11 @@ public class CarritoService {
     @Transactional
     public Carrito agregarProducto(CarritoId carritoId, UUID productoId, int cantidad, Money precio) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Agrega un producto al carrito de compras utilizando el método agregarProducto del carrito.
+        // Agrega un producto al carrito de compras utilizando el método agregarProducto
+        // del carrito.
         carrito.agregarProducto(productoId, cantidad, precio);
-        // Guarda el carrito actualizado en la base de datos y devuelve el carrito modificado
+        // Guarda el carrito actualizado en la base de datos y devuelve el carrito
+        // modificado
         return carritoRepository.save(carrito);
     }
 
@@ -52,9 +55,11 @@ public class CarritoService {
     @Transactional
     public Carrito modificarCantidad(CarritoId carritoId, UUID productoId, int nuevaCantidad) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Modifica la cantidad del producto en el carrito utilizando el método modificarCantidad del carrito.
+        // Modifica la cantidad del producto en el carrito utilizando el método
+        // modificarCantidad del carrito.
         carrito.modificarCantidad(productoId, nuevaCantidad);
-        // Guarda el carrito actualizado en la base de datos y devuelve el carrito modificado
+        // Guarda el carrito actualizado en la base de datos y devuelve el carrito
+        // modificado
         return carritoRepository.save(carrito);
     }
 
@@ -62,12 +67,14 @@ public class CarritoService {
     @Transactional
     public Carrito eliminarProducto(CarritoId carritoId, UUID productoId) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Elimina un producto del carrito utilizando el método eliminarProducto del carrito.
+        // Elimina un producto del carrito utilizando el método eliminarProducto del
+        // carrito.
         carrito.eliminarProducto(productoId);
         return carritoRepository.save(carrito);
     }
 
-    // Método para vaciar el carrito de compras, eliminando todos los productos del mismo
+    // Método para vaciar el carrito de compras, eliminando todos los productos del
+    // mismo
     @Transactional
     public Carrito vaciar(CarritoId carritoId) {
         Carrito carrito = obtenerCarrito(carritoId);
@@ -88,7 +95,8 @@ public class CarritoService {
     @Transactional
     public Carrito completarCheckout(CarritoId carritoId) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Completa el proceso de checkout del carrito utilizando el método completarCheckout del carrito,
+        // Completa el proceso de checkout del carrito utilizando el método
+        // completarCheckout del carrito,
         // lo que cambia su estado a "completado".
         carrito.completarCheckout();
         return carritoRepository.save(carrito);

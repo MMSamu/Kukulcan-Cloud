@@ -12,7 +12,8 @@ public record Cantidad(int valor) {
         }
     }
 
-    // Metodo para sumar cantidades, útil para agregar más unidades de un producto ya existente en el carrito
+    // Metodo para sumar cantidades, útil para agregar más unidades de un producto
+    // ya existente en el carrito
     public Cantidad sumar(Cantidad otra) {
         return new Cantidad(this.valor + otra.valor);
     }

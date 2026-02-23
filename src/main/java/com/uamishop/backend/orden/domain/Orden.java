@@ -3,26 +3,33 @@ package com.uamishop.backend.orden.domain;
 import com.uamishop.backend.shared.domain.Money;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import java.util.UUID;
+
 /**
  * Aggregate Root para la gestión de órdenes.
- * Implementa todas las reglas de negocio relacionadas con el ciclo de vida de
+ * Se encarga de todas las reglas de negocio relacionadas con el ciclo de vida
+ * de
  * una orden.
  */
 @Entity
 @Table(name = "ordenes")
 public class Orden {
-    @EmbeddedId
-    @AttributeOverride(name = "valor", column = @Column(name = "orden_id"))
-    private OrdenId id;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "cliente_id"))
-    private ClienteId clienteId;
+    @Id
+    @Column(name = "id")
+    private UUID id;
+
+    @Column(name = "numero_orden")
+    private String numeroOrden;
+
+    @Column(name = "cliente_id")
+    private UUID clienteId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "orden_id", nullable = false)
@@ -32,64 +39,89 @@ public class Orden {
     private DireccionEnvio direccionEnvio;
 
     @Embedded
+    private ResumenPago estadoPago;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "metodoPago", column = @Column(name = "ref_pago_metodo")),
+            @AttributeOverride(name = "referenciaExterna", column = @Column(name = "ref_pago_codigo")),
+            @AttributeOverride(name = "estado", column = @Column(name = "ref_pago_estado")),
+            @AttributeOverride(name = "fechaProcesamiento", column = @Column(name = "ref_pago_fecha"))
+    })
+    private ResumenPago referenciaPago;
+
+    @Embedded
+    private InfoEnvio infoEnvio;
+
+    @Embedded
+    private Money subtotal;
+
+    // Sobreescribe los atributos de Money para el descuento
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "cantidad", column = @Column(name = "descuento_monto")),
+            @AttributeOverride(name = "moneda", column = @Column(name = "descuento_moneda"))
+    })
+    private Money descuento;
+
+    // Sobreescribe los atributos de Money para el total
+    @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "cantidad", column = @Column(name = "total_cantidad")),
-            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda"))
+            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda")) 
     })
     private Money total;
 
+    // Estado de la orden
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_actual", nullable = false)
-    private EstadoOrden estadoActual;
+    @Embedded
+    private EstadoOrden estado;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago")
-    private EstadoPago estadoPago;
+    // Fecha de creación
+    @Column(name = "orden_estado")
+    private LocalDateTime fechaCreacion;
 
-    @Column(name = "referencia_pago")
-    private String referenciaPago;
-
-    @Column(name = "numero_guia")
-    private String numeroGuia;
-
+    // Historial de cambios de estado
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "historial_estados", joinColumns = @JoinColumn(name = "orden_id"))
-    private List<CambioEstado> historialEstados = new ArrayList<>();
+    private List<CambioEstado> historialEstados;
 
     // Constructor sin argumentos requerido por JPA
     protected Orden() {
     }
 
-    private Orden(ClienteId clienteId, List<ItemOrden> items, DireccionEnvio direccionEnvio) {
-        this.id = OrdenId.generar();
-        this.clienteId = Objects.requireNonNull(clienteId, "El ID del cliente no puede ser nulo");
-        this.items = new ArrayList<>(items);
-        this.direccionEnvio = Objects.requireNonNull(direccionEnvio, "La dirección de envío no puede ser nula");
-        this.total = calcularTotal();
-        this.estadoActual = EstadoOrden.PENDIENTE;
-        this.estadoPago = EstadoPago.PENDIENTE;
+    // Constructor para crear una nueva orden con dirección de envío
+    public Orden(UUID clienteId, DireccionEnvio direccionEnvio) {
+        this.id = UUID.randomUUID();
+        this.clienteId = clienteId;
+        this.items = new ArrayList<>();
+        this.estado = EstadoOrden.PENDIENTE;
+        this.direccionEnvio = direccionEnvio;
+        this.total = Money.pesos(0);
+        this.descuento = Money.pesos(0);
+        this.historialEstados = new ArrayList<>();
     }
 
     /**
      * Crea una nueva orden validando todas las reglas de negocio.
      * RN-ORD-01: Debe tener al menos un item
      * RN-ORD-02: El total debe ser mayor a cero
+     * RN-ORD-03: El pago debe ser mayor a cero
      * RN-ORD-04: Teléfono de 10 dígitos (validado en DireccionEnvio)
      */
-    public static Orden crear(ClienteId clienteId, List<ItemOrden> items, DireccionEnvio direccionEnvio) {
+    public void crear(UUID clienteId, List<ItemOrden> items, DireccionEnvio direccion, Money pago) {
         // RN-ORD-01: Debe tener al menos un item
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("La orden debe tener al menos un item");
         }
-
-        Orden orden = new Orden(clienteId, items, direccionEnvio);
-
         // RN-ORD-02: El total debe ser mayor a cero
-        if (!orden.total.esPositivo()) {
-            throw new IllegalArgumentException("El total de la orden debe ser mayor a cero");
+        if (!pago.esPositivo()) {
+            throw new IllegalArgumentException("El pago debe ser mayor a cero");
         }
-
-        return orden;
+        // RN-ORD-03: El pago debe ser mayor a cero
+        if (!direccion.esValido()) {
+            throw new IllegalArgumentException("La direccion de envio debe ser valida");
+        }
     }
 
     /**
@@ -99,11 +131,11 @@ public class Orden {
      */
     public void confirmar() {
         // RN-ORD-05: Validar que el estado actual sea PENDIENTE
-        if (this.estadoActual != EstadoOrden.PENDIENTE) {
+        if (this.estado != EstadoOrden.PENDIENTE) {
             throw new IllegalStateException(
-                    "Solo se pueden confirmar órdenes en estado PENDIENTE. Estado actual: " + this.estadoActual);
+                    "Solo se pueden confirmar órdenes en estado PENDIENTE. Estado actual: " + this.estado);
         }
-
+        // Cambia el estado a CONFIRMADA
         cambiarEstado(EstadoOrden.CONFIRMADA, "Orden confirmada por el cliente");
     }
 
@@ -113,19 +145,18 @@ public class Orden {
      * RN-ORD-08: La referencia de pago no debe estar vacía
      */
     public void procesarPago(String referenciaPago) {
-        // RN-ORD-07: Validar que el estado sea CONFIRMADA
-        if (this.estadoActual != EstadoOrden.CONFIRMADA) {
+        // Si el estado actual no es CONFIRMADA, lanza una excepción
+        if (this.estado != EstadoOrden.CONFIRMADA) {
             throw new IllegalStateException(
-                    "Solo se puede procesar el pago de órdenes CONFIRMADAS. Estado actual: " + this.estadoActual);
+                    "Solo se puede procesar el pago de órdenes CONFIRMADAS. Estado actual: " + this.estado);
         }
-
-        // RN-ORD-08: La referencia de pago no debe estar vacía
+        // Si la referencia de pago es nula o está vacía, lanza una excepción
         if (referenciaPago == null || referenciaPago.trim().isEmpty()) {
             throw new IllegalArgumentException("La referencia de pago no puede estar vacía");
         }
-
-        this.referenciaPago = referenciaPago;
-        this.estadoPago = EstadoPago.COMPLETADO;
+        // Registra el pago
+        this.referenciaPago = ResumenPago.completado("PAGO", referenciaPago, LocalDateTime.now());
+        // Cambia el estado a PREPARACION
         cambiarEstado(EstadoOrden.PREPARACION, "Pago procesado con referencia: " + referenciaPago);
     }
 
@@ -136,36 +167,47 @@ public class Orden {
      * RN-ORD-12: La guía debe tener longitud mínima de 5 caracteres
      */
     public void marcarEnviada(String numeroGuia) {
-        // RN-ORD-10: Validar que el estado sea PREPARACION
-        if (this.estadoActual != EstadoOrden.PREPARACION) {
+        // Si el estado actual no es PREPARACION, lanza una excepción
+        if (this.estado != EstadoOrden.PREPARACION) {
             throw new IllegalStateException(
                     "Solo se pueden marcar como enviadas las órdenes en PREPARACION. Estado actual: "
-                            + this.estadoActual);
+                            + this.estado);
         }
 
-        // RN-ORD-11: Se requiere número de guía
+        // Si el número de guía es nulo o está vacío, lanza una excepción
         if (numeroGuia == null || numeroGuia.trim().isEmpty()) {
             throw new IllegalArgumentException("El número de guía es obligatorio");
         }
 
-        // RN-ORD-12: Validar longitud mínima de guía
+        // Si la longitud del número de guía es menor a 5, lanza una excepción
         if (numeroGuia.trim().length() < 5) {
             throw new IllegalArgumentException("El número de guía debe tener al menos 5 caracteres");
         }
 
-        this.numeroGuia = numeroGuia;
+        this.infoEnvio = new InfoEnvio("", numeroGuia, LocalDateTime.now());
         cambiarEstado(EstadoOrden.ENVIADA, "Orden enviada con guía: " + numeroGuia);
+    }
+
+    public void marcarEnProceso() {
+        // Si el estado actual no es CONFIRMADA, lanza una excepción
+        if (this.estado != EstadoOrden.CONFIRMADA) {
+            throw new IllegalStateException(
+                    "Solo se pueden marcar como en proceso las órdenes CONFIRMADAS. Estado actual: " + this.estado);
+        }
+        // Cambia el estado a PREPARACION
+        cambiarEstado(EstadoOrden.PREPARACION, "Orden en preparación");
     }
 
     /**
      * Marca la orden como entregada.
      */
     public void marcarEntregada() {
-        if (this.estadoActual != EstadoOrden.ENVIADA) {
+        // Si el estado actual no es ENVIADA, lanza una excepción
+        if (this.estado != EstadoOrden.ENVIADA) {
             throw new IllegalStateException(
-                    "Solo se pueden marcar como entregadas las órdenes ENVIADAS. Estado actual: " + this.estadoActual);
+                    "Solo se pueden marcar como entregadas las órdenes ENVIADAS. Estado actual: " + this.estado);
         }
-
+        // Cambia el estado a ENTREGADA
         cambiarEstado(EstadoOrden.ENTREGADA, "Orden entregada al cliente");
     }
 
@@ -175,18 +217,18 @@ public class Orden {
      * RN-ORD-15, RN-ORD-16: Se requiere motivo de al menos 10 caracteres
      */
     public void cancelar(String motivo) {
-        // RN-ORD-14: Validar que no esté ENVIADA o ENTREGADA
-        if (this.estadoActual == EstadoOrden.ENVIADA || this.estadoActual == EstadoOrden.ENTREGADA) {
+        // Si el estado actual no es ENVIADA o ENTREGADA, lanza una excepción
+        if (this.estado == EstadoOrden.ENVIADA || this.estado == EstadoOrden.ENTREGADA) {
             throw new IllegalStateException(
                     "No se pueden cancelar órdenes que ya han sido enviadas o entregadas. Estado actual: "
-                            + this.estadoActual);
+                            + this.estado);
         }
 
-        // RN-ORD-15, RN-ORD-16: El motivo debe tener al menos 10 caracteres
+        // Si el motivo es nulo o está vacío, lanza una excepción
         if (motivo == null || motivo.trim().length() < 10) {
             throw new IllegalArgumentException("El motivo de cancelación debe tener al menos 10 caracteres");
         }
-
+        // Cambia el estado a CANCELADA
         cambiarEstado(EstadoOrden.CANCELADA, motivo);
     }
 
@@ -195,42 +237,36 @@ public class Orden {
      * RN-ORD-06: Registrar el cambio en el historial
      */
     private void cambiarEstado(EstadoOrden nuevoEstado, String motivo) {
-        EstadoOrden estadoAnterior = this.estadoActual;
-
+        EstadoOrden estadoAnterior = this.estado;
+        // Si el estado anterior no puede transicionar al nuevo estado, lanza una
+        // excepción
         if (!estadoAnterior.puedeTransicionarA(nuevoEstado)) {
             throw new IllegalStateException(
                     String.format("Transición de estado inválida: %s -> %s", estadoAnterior, nuevoEstado));
         }
+        // Cambia el estado a nuevo estado
+        this.estado = nuevoEstado;
 
-        this.estadoActual = nuevoEstado;
-
-        // RN-ORD-06: Registrar el cambio en el historial
+        // Registra el cambio en el historial
         CambioEstado cambio = CambioEstado.registrar(estadoAnterior, nuevoEstado, motivo);
         this.historialEstados.add(cambio);
     }
 
-    /**
-     * Calcula el total de la orden sumando los subtotales de todos los items.
-     */
-    private Money calcularTotal() {
-        if (items.isEmpty()) {
-            return Money.pesos(0);
-        }
-
-        Money total = items.get(0).calcularSubtotal();
-        for (int i = 1; i < items.size(); i++) {
-            total = total.sumar(items.get(i).calcularSubtotal());
-        }
-        return total;
-    }
-
     // Getters
     public OrdenId getId() {
-        return id;
+        return new OrdenId(this.id);
     }
 
-    public ClienteId getClienteId() {
-        return clienteId;
+    public String getNumeroOrden() {
+        return this.numeroOrden;
+    }
+
+    public UUID getClienteId() {
+        return this.clienteId;
+    }
+
+    public EstadoOrden getEstado() {
+        return this.estado;
     }
 
     public List<ItemOrden> getItems() {
@@ -241,42 +277,128 @@ public class Orden {
         return direccionEnvio;
     }
 
-    public Money getTotal() {
-        return total;
-    }
-
-    public EstadoOrden getEstadoActual() {
-        return estadoActual;
-    }
-
-    public EstadoPago getEstadoPago() {
+    public ResumenPago getResumenPago() {
         return estadoPago;
     }
 
-    public String getReferenciaPago() {
-        return referenciaPago;
+    public InfoEnvio getInfoEnvio() {
+        return infoEnvio;
     }
 
-    public String getNumeroGuia() {
-        return numeroGuia;
+    // Calcula el subtotal de la orden sumando el subtotal de cada item
+    public Money calcularSubtotal() {
+        // Devuelve el subtotal de la orden
+        return items.stream()
+                .map(ItemOrden::calcularSubtotal)
+                .reduce(Money.pesos(0), Money::sumar);
+    }
+
+    // Agrega un item a la orden
+    public void agregarItem(ItemOrden item) {
+        // Si el item es nulo, lanza una excepción
+        if (item == null) {
+            throw new IllegalArgumentException("El item no puede ser nulo");
+        }
+        // Agrega el item a la orden
+        this.items.add(item);
+        this.total = calcularTotal();
+    }
+
+    // Aplica un descuento a la orden
+    public void aplicarDescuento(Money descuento) {
+        // Valida que el estado de la orden sea válido
+        validarEstado();
+        // Calcula el subtotal de la orden
+        Money subtotal = calcularSubtotal();
+
+        // Si el descuento es nulo o está vacío, lanza una excepción
+        if (!descuento.esPositivo()) {
+            throw new IllegalArgumentException("El descuento debe ser mayor a cero");
+        }
+
+        // Si el descuento es mayor al subtotal, lanza una excepción
+        if (descuento.esMayorQue(subtotal)) {
+            throw new IllegalArgumentException("El descuento no puede ser mayor al subtotal");
+        }
+        // Aplica el descuento a la orden
+        this.descuento = descuento;
+        // Calcula el total de la orden
+        this.total = calcularTotal();
+    }
+
+    // Aplica un descuento a la orden
+    public void aplicarDescuento(double porcentaje) {
+        // Si el porcentaje es nulo o está vacío, lanza una excepción
+        if (porcentaje <= 0 || porcentaje > 100) {
+            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+        }
+
+        // Calcula el subtotal de la orden
+        Money subtotal = calcularSubtotal();
+
+        // Calcula el descuento sobre el subtotal
+        Money descuentoCalculado = subtotal.porcentaje(porcentaje);
+        // Aplica el descuento a la orden
+        aplicarDescuento(descuentoCalculado);
+    }
+
+    // Devuelve el descuento de la orden
+    public Money getDescuento() {
+        return descuento != null ? descuento : Money.pesos(0);
+    }
+
+    // Devuelve el total de la orden
+    public Money getTotal() {
+        return total != null ? total : Money.pesos(0);
+    }
+
+    /**
+     * Calcula el total de la orden sumando los subtotales de todos los items.
+     */
+    private Money calcularTotal() {
+        // Si no hay items, devolvemos 0
+        if (items.isEmpty()) {
+            return Money.pesos(0);
+        }
+
+        // Calculamos el subtotal de la orden
+        Money subtotal = calcularSubtotal();
+
+        // Si no hay descuento o es mayor al subtotal (safety check), devolvemos
+        // subtotal
+        if (descuento == null) {
+            return subtotal;
+        }
+
+        // El total es subtotal - descuento
+        // Nota: Money.restar valida que no quede negativo si así está implementado,
+        // pero nuestra validación en aplicarDescuento ya asegura que descuento <=
+        // subtotal
+        return subtotal.restar(descuento);
+    }
+
+    // Valida que el estado de la orden sea válido
+    private void validarEstado() {
+        // Si el estado actual no es PENDIENTE, lanza una excepción
+        if (this.estado != EstadoOrden.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se pueden modificar órdenes en estado PENDIENTE. Estado actual: "
+                            + this.estado);
+        }
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 
     public List<CambioEstado> getHistorialEstados() {
-        return Collections.unmodifiableList(historialEstados);
+        return historialEstados;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        Orden orden = (Orden) o;
-        return Objects.equals(id, orden.id);
-    }
-
+    // Devuelve el hash code de la orden
     @Override
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }

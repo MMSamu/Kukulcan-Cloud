@@ -36,7 +36,8 @@ public class CarritoController {
         this.service = service;
     }
 
-    // Endpoint para crear un nuevo carrito. Recibe el ID del cliente y devuelve el carrito creado.
+    // Endpoint para crear un nuevo carrito. Recibe el ID del cliente y devuelve el
+    // carrito creado.
     @Operation(summary = "Crear un nuevo carrito", description = "Crea un carrito vacío asociado a un cliente.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Carrito creado exitosamente"),
@@ -49,7 +50,8 @@ public class CarritoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CarritoMapper.toDTO(carrito));
     }
 
-    // Endpoint para obtener un carrito por su ID. Devuelve el carrito encontrado o un error si no existe.
+    // Endpoint para obtener un carrito por su ID. Devuelve el carrito encontrado o
+    // un error si no existe.
     @Operation(summary = "Obtener carrito", description = "Recupera la información de un carrito por su ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Carrito encontrado"),
@@ -61,7 +63,8 @@ public class CarritoController {
         return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
     }
 
-    // Endpoint para agregar un producto al carrito. Recibe el ID del carrito, el ID del producto,
+    // Endpoint para agregar un producto al carrito. Recibe el ID del carrito, el ID
+    // del producto,
     // la cantidad y el precio.
     @Operation(summary = "Agregar producto", description = "Agrega un producto nuevo o suma la cantidad si ya existe.")
     @ApiResponses(value = {
@@ -71,9 +74,11 @@ public class CarritoController {
             @ApiResponse(responseCode = "422", description = "Regla de negocio violada (ej. carrito lleno)", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/{id}/productos")
-    public ResponseEntity<CarritoResponseDTO> agregar(@PathVariable UUID id, @Valid @RequestBody AgregarProductoRequest request) {
+    public ResponseEntity<CarritoResponseDTO> agregar(@PathVariable UUID id,
+            @Valid @RequestBody AgregarProductoRequest request) {
         Money precioDominio = Money.pesos(request.precioMonto().doubleValue());
-        Carrito carrito = service.agregarProducto(new CarritoId(id),request.productoId(), request.cantidad(), precioDominio);
+        Carrito carrito = service.agregarProducto(new CarritoId(id), request.productoId(), request.cantidad(),
+                precioDominio);
         return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
     }
 
@@ -87,12 +92,14 @@ public class CarritoController {
             @ApiResponse(responseCode = "422", description = "Regla de negocio violada", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PatchMapping("/{id}/productos/{pId}")
-    public ResponseEntity<CarritoResponseDTO> modificar(@PathVariable UUID id, @PathVariable UUID pId, @Valid @RequestBody ModificarCantidadRequest request) { // <-- Cambio de DTO
+    public ResponseEntity<CarritoResponseDTO> modificar(@PathVariable UUID id, @PathVariable UUID pId,
+            @Valid @RequestBody ModificarCantidadRequest request) { // <-- Cambio de DTO
         Carrito carrito = service.modificarCantidad(new CarritoId(id), pId, request.nuevaCantidad());
         return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
     }
 
-    // Endpoint para eliminar un producto del carrito. Recibe el ID del carrito y el ID del producto a eliminar.
+    // Endpoint para eliminar un producto del carrito. Recibe el ID del carrito y el
+    // ID del producto a eliminar.
     @Operation(summary = "Eliminar producto", description = "Quita un producto por completo del carrito.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Producto eliminado"),
@@ -104,7 +111,8 @@ public class CarritoController {
         return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
     }
 
-    // Endpoint para vaciar el carrito, eliminando todos los productos. Recibe el ID del carrito.
+    // Endpoint para vaciar el carrito, eliminando todos los productos. Recibe el ID
+    // del carrito.
     @Operation(summary = "Vaciar carrito", description = "Elimina todos los productos del carrito.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Carrito vaciado exitosamente"),
@@ -116,7 +124,8 @@ public class CarritoController {
         return ResponseEntity.noContent().build();
     }
 
-    // Endpoint para iniciar el proceso de checkout del carrito. Recibe el ID del carrito
+    // Endpoint para iniciar el proceso de checkout del carrito. Recibe el ID del
+    // carrito
     // y devuelve el carrito actualizado.
     @Operation(summary = "Iniciar Checkout", description = "Bloquea el carrito para iniciar el proceso de pago.")
     @ApiResponses(value = {

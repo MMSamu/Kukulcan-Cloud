@@ -12,11 +12,12 @@ public class Money {
     private final BigDecimal cantidad;
     private final String moneda;
 
-    //Constructor para JPA (protegido para que nadie más lo use)
+    // Constructor para JPA (protegido para que nadie más lo use)
     protected Money() {
         this.cantidad = null;
         this.moneda = null;
     }
+
     // Constructor privado
     private Money(BigDecimal cantidad, String moneda) {
         // RN-VO-02: No se permiten saldos negativos
@@ -32,12 +33,15 @@ public class Money {
         return new Money(BigDecimal.valueOf(cantidad), "MXN");
     }
 
+    public Money porcentaje(double porcentaje) {
+        return new Money(this.cantidad.multiply(BigDecimal.valueOf(porcentaje)), this.moneda);
+    }
+
     // Metodo para sumar dinero (valida que sea la misma moneda)
     public Money sumar(Money otro) {
         validarMoneda(otro);
         return new Money(this.cantidad.add(otro.cantidad), this.moneda);
     }
-
 
     public Money multiplicar(int factor) {
         return new Money(this.cantidad.multiply(BigDecimal.valueOf(factor)), this.moneda);

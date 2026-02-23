@@ -10,6 +10,7 @@ public record CarritoId(UUID value) {
             throw new IllegalArgumentException("El ID del carrito no puede ser nulo");
         }
     }
+
     // Método estático para generar un nuevo ID de carrito
     public static CarritoId generar() {
         return new CarritoId(UUID.randomUUID());
