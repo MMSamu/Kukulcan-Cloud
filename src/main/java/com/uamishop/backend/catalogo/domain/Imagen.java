@@ -1,52 +1,88 @@
+/**
+ * @file Imagen.java
+ * @brief Value Object que representa una imagen asociada a un producto.
+ *
+ * Pertenece a la capa Domain.
+ * Sigue los principios de Domain Driven Design (DDD).
+ *
+ * Características:
+ * - Es inmutable (sus atributos son final).
+ * - Valida sus reglas de negocio en el constructor.
+ * - Implementa equals y hashCode por valor.
+ */
 package com.uamishop.backend.catalogo.domain;
 
+// Importación necesaria para comparar objetos de forma segura
 import java.util.Objects;
 
 /**
- * Value Object Imagen.
+ * @class Imagen
+ * @brief Value Object que representa una imagen del catálogo.
  *
- * Representa una imagen asociada a un producto del catálogo.
- * Es un objeto inmutable que garantiza la validez de sus datos
- * desde el momento de su creación.
+ * Un Value Object:
+ * - No tiene identidad propia
+ * - Se compara por sus atributos
+ * - Es inmutable
  *
  * Reglas de negocio:
  * - La URL no puede ser nula ni vacía.
- * - La URL debe iniciar con http:// o https://
+ * - Debe iniciar con http:// o https://.
  * - El orden no puede ser negativo.
  */
 public class Imagen {
 
-    /** URL de la imagen */
+    /**
+     * URL pública donde se encuentra la imagen.
+     * Es final para garantizar inmutabilidad.
+     */
     private final String url;
 
-    /** Texto alternativo para accesibilidad */
+    /**
+     * Texto alternativo de la imagen.
+     * Mejora accesibilidad (SEO y lectores de pantalla).
+     */
     private final String textoAlternativo;
 
-    /** Orden de presentación de la imagen */
+    /**
+     * Orden de presentación dentro del producto.
+     * Permite definir cuál imagen se muestra primero.
+     */
     private final int orden;
 
 
     /**
-     * Constructor de la imagen.
+     * Constructor principal del Value Object Imagen.
      *
-     * Valida todas las reglas de negocio al momento de crear la imagen.
+     * Aquí se validan todas las reglas del dominio.
+     * Si alguna regla falla, se lanza una excepción.
      *
      * @param url URL pública de la imagen
-     * @param textoAlternativo texto alternativo descriptivo
-     * @param orden posición de la imagen dentro del producto
+     * @param textoAlternativo descripción accesible
+     * @param orden posición de visualización
      *
-     * @throws IllegalArgumentException si la URL es inválida o el orden es negativo
+     * @throws IllegalArgumentException si:
+     *         - La URL es nula o vacía
+     *         - La URL no inicia con http:// o https://
+     *         - El orden es negativo
      */
     public Imagen(String url, String textoAlternativo, int orden) {
+
+        // Validación 1: URL obligatoria
         if (url == null || url.isBlank()) {
             throw new IllegalArgumentException("La url no puede estar vacia");
         }
+
+        // Validación 2: Debe ser una URL HTTP o HTTPS válida
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             throw new IllegalArgumentException("La URL debe iniciar con http:// o https://");
         }
+
+        // Validación 3: El orden no puede ser negativo
         if (orden < 0) {
             throw new IllegalArgumentException("El orden no puede ser negativo");
         }
+
+        // Asignación de atributos (inmutables)
         this.url = url;
         this.textoAlternativo = textoAlternativo;
         this.orden = orden;
@@ -62,52 +98,64 @@ public class Imagen {
     }
 
     /**
-     * Obtiene el texto alternativo de la imagen.
+     * Obtiene el texto alternativo.
      *
-     * @return texto alternativo
+     * @return texto alternativo descriptivo
      */
     public String getTextoAlternativo() {
         return textoAlternativo;
     }
 
     /**
-     * Obtiene el orden de la imagen.
+     * Obtiene el orden de visualización.
      *
-     * @return orden de presentación
+     * @return posición dentro del producto
      */
     public int getOrden() {
         return orden;
     }
 
     /**
-     * Compara dos imágenes por valor.
+     * Compara dos objetos Imagen por VALOR.
      *
-     * Dos imágenes son iguales si tienen la misma URL,
-     * texto alternativo y orden.
+     * En DDD, los Value Objects se comparan por sus atributos,
+     * no por referencia de memoria.
      *
      * @param o objeto a comparar
-     * @return true si son iguales, false en caso contrario
+     * @return true si todos los atributos coinciden
      */
     @Override
     public boolean equals(Object o) {
+
+        // Si es el mismo objeto en memoria
         if (this == o) return true;
+
+        // Si no es del mismo tipo
         if (!(o instanceof Imagen)) return false;
+
+        // Cast seguro
         Imagen imagen = (Imagen) o;
+
+        // Comparación por atributos
         return orden == imagen.orden &&
                 url.equals(imagen.url) &&
                 Objects.equals(textoAlternativo, imagen.textoAlternativo);
     }
 
     /**
-     * Genera el hash de la imagen basado en sus atributos.
+     * Genera el hash basado en los atributos.
      *
-     * @return valor hash
+     * Es obligatorio cuando se sobrescribe equals.
+     *
+     * Permite usar Imagen en:
+     * - HashSet
+     * - HashMap
+     * - Colecciones basadas en hash
+     *
+     * @return valor hash consistente
      */
     @Override
     public int hashCode() {
-
         return Objects.hash(url, textoAlternativo, orden);
     }
-
-
 }

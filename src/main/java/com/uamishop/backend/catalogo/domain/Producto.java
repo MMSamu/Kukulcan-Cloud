@@ -1,5 +1,20 @@
+/**
+ * @file Producto.java
+ * @brief Entidad de dominio que representa un producto del catálogo.
+ *
+ * Pertenece a la capa Domain.
+ * Implementa reglas de negocio del módulo de catálogo.
+ *
+ * Diferencia clave:
+ * - Es una ENTIDAD (tiene identidad propia: ProductoId).
+ * - Tiene estado mutable controlado por reglas de negocio.
+ *
+ * Reglas aplicadas:
+ * RN-CAT-01 a RN-CAT-10
+ */
 package com.uamishop.backend.catalogo.domain;
 
+// Value Object que representa dinero
 import com.uamishop.backend.shared.domain.Money;
 
 import java.time.LocalDateTime;
@@ -7,54 +22,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entidad de dominio Producto.
+ * @class Producto
+ * @brief Entidad principal del agregado Producto.
  *
- * Representa un producto dentro del catalogo del sistema.
- * Contiene reglas de negocio relacionadas con:
- * - Creación del producto
- * - Manejo de precios
- * - Activación y desactivación
- * - Gestión de imágenes
+ * Responsabilidades:
+ * - Validar reglas al crearse.
+ * - Controlar cambios de estado.
+ * - Gestionar imágenes.
+ * - Controlar activación/desactivación.
  *
- * Reglas de negocio aplicadas:
- * RN-CAT-01 a RN-CAT-10
+ * Esta clase encapsula TODA la lógica del negocio relacionada al producto.
  */
-
 public class Producto {
 
-    /** Identificador unico del producto */
+    /** Identificador único (identidad de la entidad) */
     private final ProductoId id;
 
     /** Nombre del producto */
     private String nombre;
 
-    /** Descripcion del producto */
+    /** Descripción del producto */
     private String descripcion;
 
-    /** Precio del producto */
+    /** Precio representado como Value Object Money */
     private Money precio;
 
-    /** Identificador de la categoría */
+    /** Identificador de la categoría asociada */
     private CategoriaId categoriaId;
 
-    /** Lista de imágenes asociadas al producto */
+    /** Lista interna mutable de imágenes */
     private final List<Imagen> imagenes;
 
-    /** Indica si el producto está disponible para la venta */
+    /** Indica si el producto está disponible para venta */
     private boolean disponible;
 
-    /** Fecha de creación del producto */
+    /** Fecha de creación (inmutable) */
     private final LocalDateTime fechaCreacion;
 
     /**
      * Constructor privado.
-     * Se utiliza exclusivamente desde el método de fábrica {@link #crear}.
      *
-     * @param id identificador del producto
-     * @param nombre nombre del producto
-     * @param descripcion descripción del producto
-     * @param precio precio del producto
-     * @param categoriaId categoría asociada
+     * Se usa únicamente desde métodos fábrica.
+     * Evita crear objetos sin aplicar reglas.
      */
     private Producto(
             ProductoId id,
@@ -76,18 +85,14 @@ public class Producto {
     }
 
     /**
-     * Crea un nuevo producto aplicando las reglas de negocio.
+     * Método fábrica para crear un nuevo producto.
      *
-     * RN-CAT-01: El nombre debe tener entre 3 y 100 caracteres.
-     * RN-CAT-02: La descripción no puede exceder 500 caracteres.
-     * RN-CAT-03: El precio debe ser mayor a cero.
+     * Aplica reglas:
+     * RN-CAT-01: Nombre entre 3 y 100 caracteres.
+     * RN-CAT-02: Descripción máximo 500 caracteres.
+     * RN-CAT-03: Precio mayor a cero.
      *
-     * @param nombre nombre del producto
-     * @param descripcion descripción del producto
-     * @param precio precio del producto
-     * @param categoriaId categoría asociada
-     * @return producto creado
-     * @throws IllegalArgumentException si alguna regla de negocio no se cumple
+     * @return nueva instancia válida de Producto
      */
     public static Producto crear(
             String nombre,
@@ -95,27 +100,36 @@ public class Producto {
             Money precio,
             CategoriaId categoriaId
     ) {
+
         if (nombre.length() < 3 || nombre.length() > 100) {
             throw new IllegalArgumentException("El nombre debe tener entre 3 y 100 caracteres");
         }
+
         if (descripcion.length() > 500) {
             throw new IllegalArgumentException("La descripción no puede exceder 500 caracteres");
         }
+
         if (precio.getCantidad().doubleValue() <= 0) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
 
         return new Producto(
-                ProductoId.generar(),
+                ProductoId.generar(),        // Genera identidad
                 nombre,
                 descripcion,
                 precio,
                 categoriaId,
-                false,
-                LocalDateTime.now()
+                false,                       // Inicia desactivado
+                LocalDateTime.now()          // Fecha actual
         );
     }
 
+    /**
+     * Método de reconstrucción.
+     *
+     * Se usa cuando el objeto viene desde base de datos.
+     * NO aplica reglas porque se asume ya validado.
+     */
     public static Producto reconstruir(
             ProductoId id,
             String nombre,
@@ -136,7 +150,9 @@ public class Producto {
         );
     }
 
-
+    /**
+     * Actualiza nombre y descripción aplicando reglas.
+     */
     public void actualizarNombreYDescripcion(String nombre, String descripcion) {
 
         if (nombre == null || nombre.length() < 3 || nombre.length() > 100) {
@@ -152,15 +168,13 @@ public class Producto {
     }
 
     /**
-     * Cambia el precio del producto aplicando reglas de negocio.
+     * Cambia el precio del producto.
      *
-     * RN-CAT-04: El precio no puede ser negativo.
-     * RN-CAT-05: El incremento no puede ser mayor al 50%.
-     *
-     * @param nuevoPrecio nuevo precio del producto
-     * @throws IllegalArgumentException si el precio es inválido
+     * RN-CAT-04: No puede ser negativo.
+     * RN-CAT-05: No puede aumentar más del 50%.
      */
     public void cambiarPrecio(Money nuevoPrecio) {
+
         if (nuevoPrecio.getCantidad().doubleValue() < 0) {
             throw new IllegalArgumentException("El precio no puede ser negativo");
         }
@@ -177,88 +191,75 @@ public class Producto {
         this.precio = nuevoPrecio;
     }
 
-
     /**
-     * Agrega una imagen al producto.
+     * Agrega una imagen.
      *
-     * RN-CAT-06: Un producto no puede tener más de 5 imágenes.
-     *
-     * @param imagen imagen a agregar
-     * @throws IllegalStateException si se excede el límite de imágenes
+     * RN-CAT-06: Máximo 5 imágenes.
      */
     public void agregarImagen(Imagen imagen) {
+
         if (imagenes.size() >= 5) {
             throw new IllegalStateException("Un producto no puede tener más de 5 imágenes");
         }
+
         imagenes.add(imagen);
     }
 
     /**
      * Desactiva el producto.
      *
-     * RN-CAT-08: No se puede desactivar un producto ya desactivado.
-     *
-     * @throws IllegalStateException si el producto ya está desactivado
+     * RN-CAT-08: No se puede desactivar si ya está desactivado.
      */
     public void desactivar() {
+
         if (!disponible) {
             throw new IllegalStateException("El producto ya está desactivado");
         }
+
         this.disponible = false;
     }
 
     /**
      * Activa el producto.
      *
-     * RN-CAT-09: El producto debe tener al menos una imagen.
-     * RN-CAT-10: El producto debe tener un precio válido.
-     *
-     * @throws IllegalStateException si no se cumplen las reglas de negocio
+     * RN-CAT-09: Debe tener al menos una imagen.
+     * RN-CAT-10: Debe tener precio válido.
      */
     public void activar() {
+
         if (imagenes.isEmpty()) {
             throw new IllegalStateException("El producto debe tener al menos una imagen");
         }
+
         if (precio.getCantidad().doubleValue() <= 0) {
             throw new IllegalStateException("El producto debe tener un precio válido");
         }
+
         this.disponible = true;
     }
 
-    public ProductoId getId() {
+    /* ================= GETTERS ================= */
 
-        return id;
-    }
+    public ProductoId getId() { return id; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+    public String getDescripcion() { return descripcion; }
 
-    public Money getPrecio() {
-        return precio;
-    }
+    public Money getPrecio() { return precio; }
 
-    public CategoriaId getCategoriaId() {
-        return categoriaId;
-    }
+    public CategoriaId getCategoriaId() { return categoriaId; }
 
-    public boolean isDisponible() {
-        return disponible;
-    }
+    public boolean isDisponible() { return disponible; }
 
+    /**
+     * Devuelve copia inmutable para proteger encapsulamiento.
+     */
     public List<Imagen> getImagenes() {
         return List.copyOf(imagenes);
     }
 
-    public LocalDateTime getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
 }
 
 
