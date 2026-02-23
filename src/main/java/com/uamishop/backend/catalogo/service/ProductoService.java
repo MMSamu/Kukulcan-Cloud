@@ -13,7 +13,7 @@
  * Importante:
  * - No contiene lógica de persistencia.
  * - No contiene detalles de infraestructura.
- * - Las reglas de negocio están en el dominio (Producto).
+ * - Las reglas de negocio se validan aquí y en el dominio.
  */
 
 package com.uamishop.backend.catalogo.service;
@@ -23,6 +23,7 @@ import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import com.uamishop.backend.catalogo.domain.*;
 import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.catalogo.controller.dto.*;
+import com.uamishop.backend.catalogo.exception.BusinessRuleException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,20 +33,9 @@ import java.util.stream.Collectors;
 @Service
 public class ProductoService {
 
-    /**
-     * Repositorio de dominio para Producto.
-     */
     private final ProductoRepository productoRepository;
-
-    /**
-     * Repositorio de dominio para Categoría.
-     * Se usa para validar existencia de categoría.
-     */
     private final CategoriaRepository categoriaRepository;
 
-    /**
-     * Constructor con inyección de dependencias.
-     */
     public ProductoService(
             ProductoRepository productoRepository,
             CategoriaRepository categoriaRepository
@@ -58,26 +48,25 @@ public class ProductoService {
     // CREAR PRODUCTO
     // =====================================================
 
-    /**
-     * Crea un nuevo producto.
-     *
-     * Flujo:
-     * 1. Verifica que la categoría exista.
-     * 2. Crea el producto usando la fábrica del dominio.
-     * 3. Guarda el producto.
-     * 4. Devuelve DTO de respuesta.
-     *
-     * @param request datos enviados desde el controlador
-     * @return ProductoResponse
-     */
     public ProductoResponse crear(ProductoRequest request) {
 
-        // 1️⃣ Validar que la categoría exista
+        // ✅ Validación de regla de negocio: precio obligatorio y mayor a 0
+        if (request.precio() == null || request.precio().doubleValue() <= 0) {
+            throw new BusinessRuleException(
+                    "PRECIO_INVALIDO",
+                    "El precio del producto debe ser mayor a cero"
+            );
+        }
+
+        // ✅ Validar que la categoría exista
         Categoria categoria = categoriaRepository.findById(
                 new CategoriaId(request.categoriaId())
-        ).orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+        ).orElseThrow(() -> new BusinessRuleException(
+                "CATEGORIA_NO_ENCONTRADA",
+                "La categoría especificada no existe"
+        ));
 
-        // 2️⃣ Crear el producto usando fábrica del dominio
+        // Crear producto desde el dominio
         Producto producto = Producto.crear(
                 request.nombre(),
                 request.descripcion(),
@@ -85,10 +74,8 @@ public class ProductoService {
                 categoria.getId()
         );
 
-        // 3️⃣ Guardar
         productoRepository.save(producto);
 
-        // 4️⃣ Retornar response
         return toResponse(producto);
     }
 
@@ -96,27 +83,29 @@ public class ProductoService {
     // ACTUALIZAR PRODUCTO
     // =====================================================
 
-    /**
-     * Actualiza nombre, descripción y opcionalmente precio.
-     *
-     * @param id identificador del producto
-     * @param request datos nuevos
-     * @return ProductoResponse actualizado
-     */
     public ProductoResponse actualizar(UUID id, ProductoRequest request) {
 
         Producto producto = productoRepository.findById(
                 new ProductoId(id)
-        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        ).orElseThrow(() -> new BusinessRuleException(
+                "PRODUCTO_NO_ENCONTRADO",
+                "El producto no existe"
+        ));
 
-        // Actualizar datos básicos
         producto.actualizarNombreYDescripcion(
                 request.nombre(),
                 request.descripcion()
         );
 
-        // Cambiar precio si fue enviado
         if (request.precio() != null) {
+
+            if (request.precio().doubleValue() <= 0) {
+                throw new BusinessRuleException(
+                        "PRECIO_INVALIDO",
+                        "El precio del producto debe ser mayor a cero"
+                );
+            }
+
             producto.cambiarPrecio(
                     Money.pesos(request.precio().doubleValue())
             );
@@ -131,14 +120,14 @@ public class ProductoService {
     // ACTIVAR PRODUCTO
     // =====================================================
 
-    /**
-     * Activa un producto (lo deja disponible).
-     */
     public void activar(UUID id) {
 
         Producto producto = productoRepository.findById(
                 new ProductoId(id)
-        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        ).orElseThrow(() -> new BusinessRuleException(
+                "PRODUCTO_NO_ENCONTRADO",
+                "El producto no existe"
+        ));
 
         producto.activar();
         productoRepository.save(producto);
@@ -148,14 +137,14 @@ public class ProductoService {
     // DESACTIVAR PRODUCTO
     // =====================================================
 
-    /**
-     * Desactiva un producto (lo deja no disponible).
-     */
     public void desactivar(UUID id) {
 
         Producto producto = productoRepository.findById(
                 new ProductoId(id)
-        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        ).orElseThrow(() -> new BusinessRuleException(
+                "PRODUCTO_NO_ENCONTRADO",
+                "El producto no existe"
+        ));
 
         producto.desactivar();
         productoRepository.save(producto);
@@ -165,17 +154,14 @@ public class ProductoService {
     // OBTENER POR ID
     // =====================================================
 
-    /**
-     * Obtiene un producto por su identificador.
-     *
-     * @param id UUID del producto
-     * @return ProductoResponse
-     */
     public ProductoResponse obtenerPorId(UUID id) {
 
         Producto producto = productoRepository.findById(
                 new ProductoId(id)
-        ).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        ).orElseThrow(() -> new BusinessRuleException(
+                "PRODUCTO_NO_ENCONTRADO",
+                "El producto no existe"
+        ));
 
         return toResponse(producto);
     }
@@ -184,11 +170,6 @@ public class ProductoService {
     // LISTAR TODOS
     // =====================================================
 
-    /**
-     * Lista todos los productos.
-     *
-     * @return lista de ProductoResponse
-     */
     public List<ProductoResponse> listar() {
 
         return productoRepository.findAll()
@@ -201,9 +182,6 @@ public class ProductoService {
     // MAPPER DOMAIN → DTO
     // =====================================================
 
-    /**
-     * Convierte un agregado Producto en un DTO de respuesta.
-     */
     private ProductoResponse toResponse(Producto producto) {
         return new ProductoResponse(
                 producto.getId().valor(),
