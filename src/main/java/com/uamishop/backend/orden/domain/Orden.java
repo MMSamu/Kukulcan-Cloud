@@ -42,6 +42,12 @@ public class Orden {
     private ResumenPago estadoPago;
 
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "metodoPago", column = @Column(name = "ref_pago_metodo")),
+            @AttributeOverride(name = "referenciaExterna", column = @Column(name = "ref_pago_codigo")),
+            @AttributeOverride(name = "estado", column = @Column(name = "ref_pago_estado")),
+            @AttributeOverride(name = "fechaProcesamiento", column = @Column(name = "ref_pago_fecha"))
+    })
     private ResumenPago referenciaPago;
 
     @Embedded
@@ -62,16 +68,17 @@ public class Orden {
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "cantidad", column = @Column(name = "total_cantidad")),
-            @AttributeOverride(name = "total_moneda", column = @Column(name = "total_moneda"))
+            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda")) 
     })
     private Money total;
 
     // Estado de la orden
+    @Enumerated(EnumType.STRING)
     @Embedded
     private EstadoOrden estado;
 
     // Fecha de creación
-    @Column(name = "fecha_creacion")
+    @Column(name = "orden_estado")
     private LocalDateTime fechaCreacion;
 
     // Historial de cambios de estado

@@ -1,5 +1,6 @@
 package com.uamishop.backend.orden.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,13 +15,17 @@ import java.util.Objects;
 @Embeddable
 public class ResumenPago implements Serializable {
 
+    @Column(name = "pago_metodo")
     private String metodoPago;
 
+    @Column(name = "pago_referencia")
     private String referenciaExterna;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "pago_estado")
     private EstadoPago estado;
 
+    @Column(name = "pago_fecha")
     private LocalDateTime fechaProcesamiento;
 
     // Constructor vacío requerido por JPA
