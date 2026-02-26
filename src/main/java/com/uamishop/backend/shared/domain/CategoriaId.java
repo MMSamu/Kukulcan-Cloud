@@ -5,7 +5,7 @@
  * Esta clase encapsula un UUID dentro de un objeto de dominio.
  * Pertenece a la capa Domain y forma parte de un diseño basado en DDD.
  */
-package com.uamishop.backend.catalogo.domain;
+package com.uamishop.backend.shared.domain;
 
 // Importa la clase UUID para generar identificadores únicos
 import java.util.UUID;

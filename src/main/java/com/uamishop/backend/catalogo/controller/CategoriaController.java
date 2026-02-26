@@ -9,31 +9,15 @@
  */
 package com.uamishop.backend.catalogo.controller;
 
-// Importa el servicio que contiene la lógica de negocio de categorías
 import com.uamishop.backend.catalogo.service.CategoriaService;
-
-// Importa el DTO utilizado para recibir datos del cliente
 import com.uamishop.backend.catalogo.controller.dto.CategoriaRequest;
-
-// Importa el DTO utilizado para enviar datos al cliente
 import com.uamishop.backend.catalogo.controller.dto.CategoriaResponse;
-
-// Permite activar validaciones automáticas en los DTOs
 import jakarta.validation.Valid;
-
-// Permite usar códigos de estado HTTP (200, 201, 404, etc.)
 import org.springframework.http.HttpStatus;
-
-// Permite construir respuestas HTTP completas
 import org.springframework.http.ResponseEntity;
-
-// Importa anotaciones REST como @RestController, @GetMapping, etc.
 import org.springframework.web.bind.annotation.*;
-
-// Clase que representa errores personalizados de la API
 import com.uamishop.backend.shared.exception.ApiError;
 
-// Anotaciones de Swagger para documentación automática
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,11 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-// Importa colección List
 import java.util.List;
-
-// Importa UUID para identificadores únicos
 import java.util.UUID;
 
 /**
@@ -58,18 +38,10 @@ import java.util.UUID;
  * Devuelve respuestas en formato JSON automáticamente.
  */
 @RestController
-
-/**
- * Define la ruta base para todos los endpoints de esta clase.
- * Todas las rutas comenzarán con /api/categorias
- */
-@RequestMapping("/api/categorias")
+@RequestMapping("/api/v1/categorias")
 public class CategoriaController {
 
-    /**
-     * Servicio que contiene la lógica de negocio.
-     * Se marca como final porque no debe cambiar después de inicializarse.
-     */
+
     private final CategoriaService categoriaService;
 
     /**

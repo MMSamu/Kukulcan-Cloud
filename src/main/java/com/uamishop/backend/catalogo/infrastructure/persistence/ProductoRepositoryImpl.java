@@ -22,6 +22,7 @@ package com.uamishop.backend.catalogo.infrastructure.persistence;
 
 import com.uamishop.backend.catalogo.domain.*;
 import com.uamishop.backend.catalogo.repository.ProductoRepository;
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.shared.domain.Money;
 import org.springframework.stereotype.Repository;
 
@@ -82,7 +83,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
      * @return Optional con el producto si existe
      */
     @Override
-    public Optional<Producto> findById(ProductoId id) {
+    public Optional<Producto> findById(Imagen.ProductoId id) {
         return jpaRepository.findById(id.valor())
                 .map(this::toDomain);
     }
@@ -123,7 +124,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
      * @param id identificador del producto
      */
     @Override
-    public void deleteById(ProductoId id) {
+    public void deleteById(Imagen.ProductoId id) {
         jpaRepository.deleteById(id.valor());
     }
 
@@ -134,7 +135,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
      * @return true si existe, false en caso contrario
      */
     @Override
-    public boolean existsById(ProductoId id) {
+    public boolean existsById(Imagen.ProductoId id) {
         return jpaRepository.existsById(id.valor());
     }
 
@@ -180,7 +181,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
      */
     private Producto toDomain(ProductoEntity entity) {
         return Producto.reconstruir(
-                new ProductoId(entity.getId()),
+                new Imagen.ProductoId(entity.getId()),
                 entity.getNombre(),
                 entity.getDescripcion(),
                 Money.pesos(entity.getPrecio().doubleValue()),

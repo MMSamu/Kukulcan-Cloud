@@ -14,7 +14,7 @@
 package com.uamishop.backend.catalogo.infrastructure.persistence;
 
 import com.uamishop.backend.catalogo.domain.Categoria;
-import com.uamishop.backend.catalogo.domain.CategoriaId;
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import org.springframework.stereotype.Repository;
 
