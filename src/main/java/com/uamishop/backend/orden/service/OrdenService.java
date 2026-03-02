@@ -50,10 +50,13 @@ public class OrdenService {
         Orden orden = new Orden(carrito.getClienteId(), direccionEnvio);
 
         for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
+            String nombre = itemCarrito.getNombreProducto() != null ? itemCarrito.getNombreProducto() : "Producto";
+            String sku = itemCarrito.getSku() != null ? itemCarrito.getSku() : "SKU-001";
+
             com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
                     itemCarrito.getProductoId(),
-                    itemCarrito.getNombreProducto(),
-                    itemCarrito.getSku(),
+                    nombre,
+                    sku,
                     itemCarrito.getCantidad(),
                     itemCarrito.getPrecioUnitario());
             orden.agregarItem(itemOrden);
@@ -73,9 +76,9 @@ public class OrdenService {
 
     // Busca una orden por su ID
     @Transactional(readOnly = true)
-    public Orden buscarPorId(UUID clienteId) {
+    public Orden buscarPorId(UUID ordenId) {
         // Devuelve la orden encontrada o lanza una excepción si no existe
-        return ordenRepository.findById(clienteId).orElseThrow(() -> new DomainException("Orden no encontrada"));
+        return ordenRepository.findById(ordenId).orElseThrow(() -> new DomainException("Orden no encontrada"));
     }
 
     // Busca todas las órdenes

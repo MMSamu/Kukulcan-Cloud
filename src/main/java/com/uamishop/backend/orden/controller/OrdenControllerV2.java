@@ -122,9 +122,9 @@ public class OrdenControllerV2 {
         })
 
         // Confirmar una orden
-        @PostMapping("/{clienteId}/confirmar")
-        public ResponseEntity<OrdenResponseDTO> confirmar(@PathVariable UUID clienteId) {
-                return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.confirmar(clienteId)));
+        @PostMapping("/{id}/confirmar")
+        public ResponseEntity<OrdenResponseDTO> confirmar(@PathVariable UUID id) {
+                return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.confirmar(id)));
         }
 
         // Procesar pago
@@ -138,12 +138,12 @@ public class OrdenControllerV2 {
         })
 
         // Procesar pago
-        @PostMapping("/{clienteId}/procesar-pago")
-        public ResponseEntity<OrdenResponseDTO> procesarPago(@PathVariable UUID clienteId,
+        @PostMapping("/{id}/procesar-pago")
+        public ResponseEntity<OrdenResponseDTO> procesarPago(@PathVariable UUID id,
                         @RequestBody PagoRequest request) {
                 return ResponseEntity
                                 .ok(OrdenResponseDTO.fromDomain(
-                                                ordenService.procesarPago(clienteId, request.referenciaPago())));
+                                                ordenService.procesarPago(id, request.referenciaPago())));
         }
 
         // Marcar como en proceso
@@ -157,9 +157,9 @@ public class OrdenControllerV2 {
         })
 
         // Marcar como en proceso
-        @PostMapping("/{clienteId}/marcar-en-proceso")
-        public ResponseEntity<OrdenResponseDTO> marcarEnProceso(@PathVariable UUID clienteId) {
-                return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.marcarEnProceso(clienteId)));
+        @PostMapping("/{id}/marcar-en-proceso")
+        public ResponseEntity<OrdenResponseDTO> marcarEnProceso(@PathVariable UUID id) {
+                return ResponseEntity.ok(OrdenResponseDTO.fromDomain(ordenService.marcarEnProceso(id)));
         }
 
         // Marcar como enviada
