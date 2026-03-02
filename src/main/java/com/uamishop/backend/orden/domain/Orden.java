@@ -36,10 +36,10 @@ public class Orden {
     private List<ItemOrden> items = new ArrayList<>();
 
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "estado", column = @Column(name = "direccion_estado"))
+    })
     private DireccionEnvio direccionEnvio;
-
-    @Embedded
-    private ResumenPago estadoPago;
 
     @Embedded
     @AttributeOverrides({
@@ -68,17 +68,17 @@ public class Orden {
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "cantidad", column = @Column(name = "total_cantidad")),
-            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda")) 
+            @AttributeOverride(name = "moneda", column = @Column(name = "total_moneda"))
     })
     private Money total;
 
     // Estado de la orden
     @Enumerated(EnumType.STRING)
-    @Embedded
+    @Column(name = "estado")
     private EstadoOrden estado;
 
     // Fecha de creación
-    @Column(name = "orden_estado")
+    @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
     // Historial de cambios de estado
@@ -93,12 +93,16 @@ public class Orden {
     // Constructor para crear una nueva orden con dirección de envío
     public Orden(UUID clienteId, DireccionEnvio direccionEnvio) {
         this.id = UUID.randomUUID();
+        this.numeroOrden = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         this.clienteId = clienteId;
         this.items = new ArrayList<>();
         this.estado = EstadoOrden.PENDIENTE;
         this.direccionEnvio = direccionEnvio;
+        this.subtotal = Money.pesos(0);
         this.total = Money.pesos(0);
         this.descuento = Money.pesos(0);
+        this.fechaCreacion = LocalDateTime.now();
+        this.referenciaPago = ResumenPago.pendiente();
         this.historialEstados = new ArrayList<>();
     }
 
@@ -278,7 +282,7 @@ public class Orden {
     }
 
     public ResumenPago getResumenPago() {
-        return estadoPago;
+        return referenciaPago;
     }
 
     public InfoEnvio getInfoEnvio() {

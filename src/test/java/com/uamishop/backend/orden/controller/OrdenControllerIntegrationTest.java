@@ -23,133 +23,137 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class OrdenControllerIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private CarritoJpaRepository carritoRepository;
+        @Autowired
+        private CarritoJpaRepository carritoRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @Test
-    @DisplayName("Debe crear una orden desde el carrito correctamente (201)")
-    void debeCrearOrdenDesdeCarrito() throws Exception {
-        // Preparar Carrito
-        UUID clienteId = UUID.randomUUID();
-        Carrito carrito = new Carrito(clienteId);
-        carrito.agregarProducto(UUID.randomUUID(), 2, Money.pesos(100));
-        carrito.iniciarCheckout();
-        carritoRepository.save(carrito);
+        @Test
+        @DisplayName("Debe crear una orden desde el carrito correctamente (201)")
+        void debeCrearOrdenDesdeCarrito() throws Exception {
+                // Preparar Carrito
+                UUID clienteId = UUID.randomUUID();
+                Carrito carrito = new Carrito(clienteId);
+                // Agregamos el producto al carrito
+                carrito.agregarProducto(UUID.randomUUID(), 2, Money.pesos(100));
+                carrito.iniciarCheckout();
+                carritoRepository.save(carrito);
 
-        DireccionEnvioRequest direccion = new DireccionEnvioRequest(
-                "Calle Falsa 123",
-                "10",
-                "01234",
-                "Ciudad de México",
-                "CDMX",
-                "5512345678");
+                DireccionEnvioRequest direccion = new DireccionEnvioRequest(
+                                "Calle Falsa 123",
+                                "10",
+                                "01234",
+                                "Ciudad de México",
+                                "CDMX",
+                                "5512345678");
 
-        mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(direccion)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.clienteId").value(clienteId.toString()))
-                .andExpect(jsonPath("$.estado").value("PENDIENTE"));
-    }
+                mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(direccion)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.clienteId").value(clienteId.toString()))
+                                .andExpect(jsonPath("$.estado").value("PENDIENTE"));
+        }
 
-    @Test
-    @DisplayName("Debe buscar una orden por ID (200)")
-    void debeBuscarOrdenPorId() throws Exception {
-        // Crear orden vía carrito primero
-        UUID clienteId = UUID.randomUUID();
-        Carrito carrito = new Carrito(clienteId);
-        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(60));
-        carrito.iniciarCheckout();
-        carritoRepository.save(carrito);
+        @Test
+        @DisplayName("Debe buscar una orden por ID (200)")
+        void debeBuscarOrdenPorId() throws Exception {
+                // Crear orden vía carrito primero
+                UUID clienteId = UUID.randomUUID();
+                Carrito carrito = new Carrito(clienteId);
+                carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(60));
+                carrito.iniciarCheckout();
+                carritoRepository.save(carrito);
 
-        DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 1", "1", "12345", "Ciudad", "Estado",
-                "5512345678");
+                DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 1", "1", "12345", "Ciudad", "Estado",
+                                "5512345678");
 
-        String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(direccion)))
-                .andReturn().getResponse().getContentAsString();
+                String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(direccion)))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString();
 
-        String ordenId = objectMapper.readTree(response).get("id").asText();
+                String ordenId = objectMapper.readTree(response).get("id").asText();
 
-        mockMvc.perform(get("/api/v2/ordenes/" + ordenId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(ordenId));
-    }
+                mockMvc.perform(get("/api/v2/ordenes/" + ordenId))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(ordenId));
+        }
 
-    @Test
-    @DisplayName("Debe listar todas las ordenes (200)")
-    void debeListarOrdenes() throws Exception {
-        mockMvc.perform(get("/api/v2/ordenes"))
-                .andExpect(status().isOk());
-    }
+        @Test
+        @DisplayName("Debe listar todas las ordenes (200)")
+        void debeListarOrdenes() throws Exception {
+                mockMvc.perform(get("/api/v2/ordenes"))
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    @DisplayName("Debe procesar el flujo completo de una orden (Pendiente -> Confirmada -> Preparación)")
-    void debeProcesarFlujoOrden() throws Exception {
-        // 1. Crear Orden
-        UUID clienteId = UUID.randomUUID();
-        Carrito carrito = new Carrito(clienteId);
-        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(75));
-        carrito.iniciarCheckout();
-        carritoRepository.save(carrito);
+        @Test
+        @DisplayName("Debe procesar el flujo completo de una orden (Pendiente -> Confirmada -> Preparación)")
+        void debeProcesarFlujoOrden() throws Exception {
+                // 1. Crear Orden
+                UUID clienteId = UUID.randomUUID();
+                Carrito carrito = new Carrito(clienteId);
+                carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(75));
+                carrito.iniciarCheckout();
+                carritoRepository.save(carrito);
 
-        DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 2", "2", "54321", "Ciudad", "Estado",
-                "5587654321");
+                DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 2", "2", "54321", "Ciudad", "Estado",
+                                "5587654321");
 
-        String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(direccion)))
-                .andReturn().getResponse().getContentAsString();
+                String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(direccion)))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString();
 
-        String ordenId = objectMapper.readTree(response).get("id").asText();
+                String ordenId = objectMapper.readTree(response).get("id").asText();
 
-        // 2. Confirmar Orden
-        mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/confirmar"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
+                // 2. Confirmar Orden
+                mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/confirmar"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
 
-        // 3. Procesar Pago
-        PagoRequest pagoRequest = new PagoRequest("PAGO12345678");
-        mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/procesar-pago")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(pagoRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.estado").value("PREPARACION"));
-    }
+                // 3. Procesar Pago
+                PagoRequest pagoRequest = new PagoRequest("PAGO12345678");
+                mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/procesar-pago")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(pagoRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.estado").value("PREPARACION"));
+        }
 
-    @Test
-    @DisplayName("Debe cancelar una orden (200)")
-    void debeCancelarOrden() throws Exception {
-        // Crear Orden
-        UUID clienteId = UUID.randomUUID();
-        Carrito carrito = new Carrito(clienteId);
-        carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(100));
-        carrito.iniciarCheckout();
-        carritoRepository.save(carrito);
+        @Test
+        @DisplayName("Debe cancelar una orden (200)")
+        void debeCancelarOrden() throws Exception {
+                // Crear Orden
+                UUID clienteId = UUID.randomUUID();
+                Carrito carrito = new Carrito(clienteId);
+                carrito.agregarProducto(UUID.randomUUID(), 1, Money.pesos(100));
+                carrito.iniciarCheckout();
+                carritoRepository.save(carrito);
 
-        DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 3", "3", "11223", "Ciudad", "Estado",
-                "5512341234");
+                DireccionEnvioRequest direccion = new DireccionEnvioRequest("Calle 3", "3", "11223", "Ciudad", "Estado",
+                                "5512341234");
 
-        String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(direccion)))
-                .andReturn().getResponse().getContentAsString();
+                String response = mockMvc.perform(post("/api/v2/ordenes/" + carrito.getId().value() + "/orden")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(direccion)))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString();
 
-        String ordenId = objectMapper.readTree(response).get("id").asText();
+                String ordenId = objectMapper.readTree(response).get("id").asText();
 
-        // Cancelar Orden
-        CancelacionRequest cancelRequest = new CancelacionRequest("El cliente ya no desea el producto");
-        mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/cancelar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cancelRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.estado").value("CANCELADA"));
-    }
+                // Cancelar Orden
+                CancelacionRequest cancelRequest = new CancelacionRequest("El cliente ya no desea el producto");
+                mockMvc.perform(post("/api/v2/ordenes/" + ordenId + "/cancelar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(cancelRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.estado").value("CANCELADA"));
+        }
 }
