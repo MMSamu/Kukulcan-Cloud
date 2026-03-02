@@ -1,4 +1,4 @@
-package com.uamishop.backend.orden.domain;
+package com.uamishop.backend.shared.domain;
 
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
