@@ -50,13 +50,10 @@ public class OrdenService {
         Orden orden = new Orden(carrito.getClienteId(), direccionEnvio);
 
         for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
-            String nombre = itemCarrito.getNombreProducto() != null ? itemCarrito.getNombreProducto() : "Producto";
-            String sku = itemCarrito.getSku() != null ? itemCarrito.getSku() : "SKU-001";
-
             com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
                     itemCarrito.getProductoId(),
-                    nombre,
-                    sku,
+                    itemCarrito.getNombreProducto(),
+                    itemCarrito.getSku(),
                     itemCarrito.getCantidad(),
                     itemCarrito.getPrecioUnitario());
             orden.agregarItem(itemOrden);
