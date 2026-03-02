@@ -47,14 +47,14 @@ public class OrdenService {
                 .orElseThrow(() -> new DomainException("Carrito no encontrado"));
 
         // 2. Construir la Orden con los datos del Carrito
-        Orden orden = new Orden(carrito.getClienteId(), direccionEnvio);
+        Orden orden = new Orden(carrito.getClienteId().getValor(), direccionEnvio);
 
         for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
             String nombre = itemCarrito.getNombreProducto() != null ? itemCarrito.getNombreProducto() : "Producto";
             String sku = itemCarrito.getSku() != null ? itemCarrito.getSku() : "SKU-001";
 
             com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
-                    itemCarrito.getProductoId(),
+                    itemCarrito.getProductoId().getValor(),
                     nombre,
                     sku,
                     itemCarrito.getCantidad(),

@@ -95,4 +95,8 @@ public class ProductoId {
     public String toString() {
         return valor.toString();
     }
+
+    public UUID getValor() {
+        return valor;
+    }
 }

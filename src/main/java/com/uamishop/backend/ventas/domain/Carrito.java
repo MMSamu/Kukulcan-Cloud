@@ -46,7 +46,7 @@ public class Carrito {
     private Money descuento;
 
     // Constructor vacío para JPA
-    protected Carrito() { }
+    protected Carrito(UUID clienteId) { }
 
     // Constructor para crear un nuevo carrito
     public Carrito(ClienteId clienteId) {
