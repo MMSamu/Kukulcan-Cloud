@@ -47,17 +47,17 @@ public class OrdenService {
                 .orElseThrow(() -> new DomainException("Carrito no encontrado"));
 
         // 2. Construir la Orden con los datos del Carrito
-        Orden orden = new Orden(carrito.getClienteId(), direccionEnvio);
+        Orden orden = new Orden(carrito.getClienteId().getValor(), direccionEnvio);
 
         for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
-            com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
-                    itemCarrito.getProductoId(),
-                    itemCarrito.getNombreProducto(),
-                    itemCarrito.getSku(),
-                    itemCarrito.getCantidad(),
-                    itemCarrito.getPrecioUnitario());
-            orden.agregarItem(itemOrden);
-        }
+        com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
+                itemCarrito.getProductoId().valor(), 
+                itemCarrito.getNombreProducto(),
+                itemCarrito.getSku(),
+                itemCarrito.getCantidad(),
+                itemCarrito.getPrecioUnitario());
+        orden.agregarItem(itemOrden);
+    }
 
         // 3. Aplicar descuento si existía en el carrito
         if (carrito.getDescuento() != null && carrito.getDescuento().esPositivo()) {
@@ -75,7 +75,8 @@ public class OrdenService {
     @Transactional(readOnly = true)
     public Orden buscarPorId(UUID clienteId) {
         // Devuelve la orden encontrada o lanza una excepción si no existe
-        return ordenRepository.findById(clienteId).orElseThrow(() -> new DomainException("Orden no encontrada"));
+        return ordenRepository.findById(clienteId)
+                .orElseThrow(() -> new DomainException("Orden no encontrada"));
     }
 
     // Busca todas las órdenes

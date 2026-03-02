@@ -97,6 +97,7 @@ public class Orden {
         this.items = new ArrayList<>();
         this.estado = EstadoOrden.PENDIENTE;
         this.direccionEnvio = direccionEnvio;
+        this.fechaCreacion = LocalDateTime.now();
         this.total = Money.pesos(0);
         this.descuento = Money.pesos(0);
         this.historialEstados = new ArrayList<>();
