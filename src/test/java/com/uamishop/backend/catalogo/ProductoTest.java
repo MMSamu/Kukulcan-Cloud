@@ -1,6 +1,6 @@
 package com.uamishop.backend.catalogo;
 
-import com.uamishop.backend.catalogo.domain.CategoriaId;
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.catalogo.domain.Producto;
 import com.uamishop.backend.shared.domain.Money;
 import org.junit.jupiter.api.Test;

@@ -1,16 +1,4 @@
-/**
- * @file ProductoId.java
- * @brief Value Object que representa la identidad única de un Producto.
- *
- * Pertenece a la capa Domain.
- * Encapsula un UUID para evitar usar tipos primitivos directamente en el modelo.
- *
- * Beneficios:
- * - Seguridad de tipos
- * - Mejor expresividad del dominio
- * - Encapsulamiento de validaciones
- */
-package com.uamishop.backend.catalogo.domain;
+package com.uamishop.backend.shared.domain;
 
 // Utilidad para validaciones de null
 import java.util.Objects;

@@ -1,7 +1,7 @@
 package com.uamishop.backend.catalogo;
 
 import com.uamishop.backend.catalogo.domain.Categoria;
-import com.uamishop.backend.catalogo.domain.CategoriaId;
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class ProductoControllerIntegrationTest {
         }
         """.formatted(categoria.getId().valor());
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/v1/productos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated());

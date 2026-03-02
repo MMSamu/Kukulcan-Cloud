@@ -7,6 +7,8 @@
  */
 package com.uamishop.backend.catalogo.domain;
 
+import com.uamishop.backend.shared.domain.CategoriaId;
+
 /**
  * @class Categoria
  * @brief Representa una categoría del catálogo.

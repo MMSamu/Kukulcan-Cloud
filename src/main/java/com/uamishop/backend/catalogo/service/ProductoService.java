@@ -21,6 +21,7 @@ package com.uamishop.backend.catalogo.service;
 import com.uamishop.backend.catalogo.repository.ProductoRepository;
 import com.uamishop.backend.catalogo.repository.CategoriaRepository;
 import com.uamishop.backend.catalogo.domain.*;
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.catalogo.controller.dto.*;
 import com.uamishop.backend.catalogo.exception.BusinessRuleException;
@@ -86,7 +87,7 @@ public class ProductoService {
     public ProductoResponse actualizar(UUID id, ProductoRequest request) {
 
         Producto producto = productoRepository.findById(
-                new ProductoId(id)
+                new Imagen.ProductoId(id)
         ).orElseThrow(() -> new BusinessRuleException(
                 "PRODUCTO_NO_ENCONTRADO",
                 "El producto no existe"
@@ -123,7 +124,7 @@ public class ProductoService {
     public void activar(UUID id) {
 
         Producto producto = productoRepository.findById(
-                new ProductoId(id)
+                new Imagen.ProductoId(id)
         ).orElseThrow(() -> new BusinessRuleException(
                 "PRODUCTO_NO_ENCONTRADO",
                 "El producto no existe"
@@ -140,7 +141,7 @@ public class ProductoService {
     public void desactivar(UUID id) {
 
         Producto producto = productoRepository.findById(
-                new ProductoId(id)
+                new Imagen.ProductoId(id)
         ).orElseThrow(() -> new BusinessRuleException(
                 "PRODUCTO_NO_ENCONTRADO",
                 "El producto no existe"
@@ -157,7 +158,7 @@ public class ProductoService {
     public ProductoResponse obtenerPorId(UUID id) {
 
         Producto producto = productoRepository.findById(
-                new ProductoId(id)
+                new Imagen.ProductoId(id)
         ).orElseThrow(() -> new BusinessRuleException(
                 "PRODUCTO_NO_ENCONTRADO",
                 "El producto no existe"

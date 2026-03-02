@@ -15,6 +15,7 @@
 package com.uamishop.backend.catalogo.domain;
 
 // Value Object que representa dinero
+import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.shared.domain.Money;
 
 import java.time.LocalDateTime;
@@ -36,7 +37,7 @@ import java.util.List;
 public class Producto {
 
     /** Identificador único (identidad de la entidad) */
-    private final ProductoId id;
+    private final Imagen.ProductoId id;
 
     /** Nombre del producto */
     private String nombre;
@@ -66,7 +67,7 @@ public class Producto {
      * Evita crear objetos sin aplicar reglas.
      */
     private Producto(
-            ProductoId id,
+            Imagen.ProductoId id,
             String nombre,
             String descripcion,
             Money precio,
@@ -114,7 +115,7 @@ public class Producto {
         }
 
         return new Producto(
-                ProductoId.generar(),        // Genera identidad
+                Imagen.ProductoId.generar(),        // Genera identidad
                 nombre,
                 descripcion,
                 precio,
@@ -131,7 +132,7 @@ public class Producto {
      * NO aplica reglas porque se asume ya validado.
      */
     public static Producto reconstruir(
-            ProductoId id,
+            Imagen.ProductoId id,
             String nombre,
             String descripcion,
             Money precio,
@@ -240,7 +241,7 @@ public class Producto {
 
     /* ================= GETTERS ================= */
 
-    public ProductoId getId() { return id; }
+    public Imagen.ProductoId getId() { return id; }
 
     public String getNombre() { return nombre; }
 
