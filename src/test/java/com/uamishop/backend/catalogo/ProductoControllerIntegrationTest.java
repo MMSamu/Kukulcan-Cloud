@@ -51,7 +51,7 @@ class ProductoControllerIntegrationTest {
         }
         """.formatted(categoria.getId().valor());
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(post("/api/v1/productos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated());

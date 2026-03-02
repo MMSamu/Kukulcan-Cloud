@@ -29,7 +29,7 @@ class CategoriaControllerIntegrationTest {
         }
         """;
 
-        mockMvc.perform(post("/api/categorias")
+        mockMvc.perform(post("/api/v1/categorias")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated());
@@ -39,7 +39,7 @@ class CategoriaControllerIntegrationTest {
     @DisplayName("Debe listar categorías (200)")
     void debeListarCategorias() throws Exception {
 
-        mockMvc.perform(get("/api/categorias"))
+        mockMvc.perform(get("/api/v1/categorias"))
                 .andExpect(status().isOk());
     }
 
@@ -54,17 +54,16 @@ class CategoriaControllerIntegrationTest {
         }
         """;
 
-        String response = mockMvc.perform(post("/api/categorias")
+        String response = mockMvc.perform(post("/api/v1/categorias")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        // Extraemos el id del JSON manualmente
         String id = response.split("\"id\":\"")[1].split("\"")[0];
 
-        mockMvc.perform(get("/api/categorias/" + id))
+        mockMvc.perform(get("/api/v1/categorias/" + id))
                 .andExpect(status().isOk());
     }
 
@@ -79,7 +78,7 @@ class CategoriaControllerIntegrationTest {
         }
         """;
 
-        String response = mockMvc.perform(post("/api/categorias")
+        String response = mockMvc.perform(post("/api/v1/categorias")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andReturn()
@@ -95,7 +94,7 @@ class CategoriaControllerIntegrationTest {
         }
         """;
 
-        mockMvc.perform(put("/api/categorias/" + id)
+        mockMvc.perform(put("/api/v1/categorias/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
                 .andExpect(status().isOk());
@@ -112,7 +111,7 @@ class CategoriaControllerIntegrationTest {
         }
         """;
 
-        String response = mockMvc.perform(post("/api/categorias")
+        String response = mockMvc.perform(post("/api/v1/categorias")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andReturn()
@@ -121,7 +120,7 @@ class CategoriaControllerIntegrationTest {
 
         String id = response.split("\"id\":\"")[1].split("\"")[0];
 
-        mockMvc.perform(delete("/api/categorias/" + id))
+        mockMvc.perform(delete("/api/v1/categorias/" + id))
                 .andExpect(status().isNoContent());
     }
 }

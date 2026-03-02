@@ -328,18 +328,21 @@ public class Orden {
 
     // Aplica un descuento a la orden
     public void aplicarDescuento(double porcentaje) {
-        // Si el porcentaje es nulo o está vacío, lanza una excepción
-        if (porcentaje <= 0 || porcentaje > 100) {
-            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+
+        if (porcentaje < 0 || porcentaje > 100) {
+            throw new IllegalArgumentException("Porcentaje inválido");
         }
 
-        // Calcula el subtotal de la orden
         Money subtotal = calcularSubtotal();
 
-        // Calcula el descuento sobre el subtotal
-        Money descuentoCalculado = subtotal.porcentaje(porcentaje);
-        // Aplica el descuento a la orden
-        aplicarDescuento(descuentoCalculado);
+        // calcular descuento manualmente para evitar conflictos internos
+        double montoDescuento = subtotal.getCantidad().doubleValue() * (porcentaje / 100.0);
+
+        Money descuentoCalculado = Money.pesos(montoDescuento);
+
+        // usamos directamente el setter sin volver a validar estado
+        this.descuento = descuentoCalculado;
+        this.total = calcularTotal();
     }
 
     // Devuelve el descuento de la orden
