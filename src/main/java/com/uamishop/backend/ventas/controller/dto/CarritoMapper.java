@@ -2,30 +2,31 @@ package com.uamishop.backend.ventas.controller.dto;
 
 import com.uamishop.backend.ventas.domain.Carrito;
 
-/*Este mapper convierte un Carrito de dominio a un CarritoResponseDTO para la capa de presentación*/
 public class CarritoMapper {
-    // Convierte un Carrito a CarritoResponseDTO
+
+    // Clase para mapear el dominio Carrito a CarritoResponseDTO
+    private CarritoMapper() {
+    }
+    
     public static CarritoResponseDTO toDTO(Carrito carrito) {
-        // Para cada item en el carrito, se crea un ItemResponseDTO con el productoId,
-        // cantidad, precio unitario y subtotal
+        // Extraemos UUID y BigDecimal de los Value Objects
         var items = carrito.getItems().stream()
                 .map(i -> new ItemResponseDTO(
-                        i.getProductoId(),
+                        i.getProductoId().valor(), //Devuelve el valor
                         i.getCantidad(),
-                        i.subtotal().multiplicar(1).getCantidad().divide(new java.math.BigDecimal(i.getCantidad())), // precio unitario
-                        i.subtotal().getCantidad()
+                        i.getPrecioUnitario().getCantidad(), // Precio
+                        i.subtotal().getCantidad()           // Subtotal
                 )).toList();
 
-        /* Se construye el CarritoResponseDTO con toda la información relevante del carrito,
-        incluyendo el subtotal, descuento, total y estado */
+        // Construcción del DTO
         return new CarritoResponseDTO(
-                carrito.getId().value(),
-                carrito.getClienteId(),
+                carrito.getId().value(),              // UUID del carrito
+                carrito.getClienteId().getValor(),    // UUID del cliente
                 items,
-                carrito.calcularTotal().sumar(carrito.getDescuento()).getCantidad(), // subtotal
-                carrito.getDescuento().getCantidad(),
-                carrito.calcularTotal().getCantidad(),
-                carrito.getEstado().name()
+                carrito.calcularTotal().sumar(carrito.getDescuento()).getCantidad(), // Subtotal
+                carrito.getDescuento().getCantidad(), // Dscuento
+                carrito.calcularTotal().getCantidad(),// Total
+                carrito.getEstado().name()            // String del Estado del carrito
         );
     }
 }
