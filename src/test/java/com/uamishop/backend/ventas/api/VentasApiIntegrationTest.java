@@ -1,7 +1,6 @@
 package com.uamishop.backend.ventas.api;
 
 import com.uamishop.backend.shared.domain.ClienteId;
-import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.ventas.domain.Carrito;
 import com.uamishop.backend.ventas.domain.CarritoId;
@@ -34,7 +33,7 @@ class VentasApiIntegrationTest {
         CarritoId carritoId = carritoPersistido.getId();
         
         ProductoId productoId = new ProductoId(UUID.randomUUID());
-        carritoService.agregarProducto(carritoId, productoId, 2, Money.pesos(100.0));
+        carritoService.agregarProducto(carritoId, productoId, 2);
 
         // WHEN: Llamamos a la API interna
         CarritoResumen resumen = ventasApi.obtenerResumen(carritoId.value());
@@ -54,7 +53,7 @@ class VentasApiIntegrationTest {
     void debeCompletarCheckoutPublico() {
         // GIVEN: Un carrito con total suficiente para hacer checkout
         Carrito carrito = carritoService.crear(ClienteId.de(UUID.randomUUID()));
-        carritoService.agregarProducto(carrito.getId(), new ProductoId(UUID.randomUUID()), 1, Money.pesos(100.0));
+        carritoService.agregarProducto(carrito.getId(), new ProductoId(UUID.randomUUID()), 1);
         
         // Requiere estar en "EN_CHECKOUT" antes de completar
         carritoService.iniciarCheckout(carrito.getId());
