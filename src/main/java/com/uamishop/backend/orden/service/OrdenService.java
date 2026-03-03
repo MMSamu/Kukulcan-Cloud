@@ -4,7 +4,7 @@ package com.uamishop.backend.orden.service;
 import com.uamishop.backend.shared.exception.DomainException;
 import com.uamishop.backend.ventas.domain.Carrito;
 import com.uamishop.backend.ventas.domain.CarritoId;
-import com.uamishop.backend.ventas.repository.CarritoJpaRepository;
+import com.uamishop.backend.ventas.service.CarritoService;
 import com.uamishop.backend.orden.domain.DireccionEnvio;
 import com.uamishop.backend.orden.domain.Orden;
 import com.uamishop.backend.orden.repository.OrdenJpaRepository;
@@ -20,14 +20,14 @@ public class OrdenService {
     // Inyección de dependencias
     private final OrdenJpaRepository ordenRepository;
     // Repositorio para acceder a los datos del carrito
-    private final CarritoJpaRepository carritoRepository;
+    private final CarritoService carritoService;
 
     // Constructor para la inyección de dependencias
-    public OrdenService(OrdenJpaRepository ordenRepository, CarritoJpaRepository carritoRepository) {
+    public OrdenService(OrdenJpaRepository ordenRepository, CarritoService carritoService) {
         // Inyecta el repositorio de órdenes
         this.ordenRepository = ordenRepository;
         // Inyecta el repositorio de carritos
-        this.carritoRepository = carritoRepository;
+        this.carritoService = carritoService;
     }
 
     // Crea una nueva orden
@@ -43,21 +43,20 @@ public class OrdenService {
     @Transactional
     public Orden crearDesdeCarrito(CarritoId carritoId, DireccionEnvio direccionEnvio) {
         // 1. Buscar el carrito usando su UUID, no el wrapper CarritoId
-        Carrito carrito = carritoRepository.findById(carritoId.value())
-                .orElseThrow(() -> new DomainException("Carrito no encontrado"));
+        Carrito carrito = carritoService.obtenerCarrito(carritoId);
 
         // 2. Construir la Orden con los datos del Carrito
         Orden orden = new Orden(carrito.getClienteId().getValor(), direccionEnvio);
 
         for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
-        com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
-                itemCarrito.getProductoId().valor(), 
-                itemCarrito.getNombreProducto(),
-                itemCarrito.getSku(),
-                itemCarrito.getCantidad(),
-                itemCarrito.getPrecioUnitario());
-        orden.agregarItem(itemOrden);
-    }
+            com.uamishop.backend.orden.domain.ItemOrden itemOrden = com.uamishop.backend.orden.domain.ItemOrden.crear(
+                    itemCarrito.getProductoId().valor(),
+                    itemCarrito.getNombreProducto(),
+                    itemCarrito.getSku(),
+                    itemCarrito.getCantidad(),
+                    itemCarrito.getPrecioUnitario());
+            orden.agregarItem(itemOrden);
+        }
 
         // 3. Aplicar descuento si existía en el carrito
         if (carrito.getDescuento() != null && carrito.getDescuento().esPositivo()) {
@@ -66,7 +65,6 @@ public class OrdenService {
 
         // 4. Marcar el carrito como completado
         carrito.completarCheckout();
-        carritoRepository.save(carrito);
 
         return ordenRepository.save(orden);
     }

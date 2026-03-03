@@ -50,7 +50,9 @@ public class ItemOrden {
 
         this.id = ItemOrdenId.generar();
         this.productoId = Objects.requireNonNull(productoId, "El ID del producto no puede ser nulo");
-        this.nombreProducto = Objects.requireNonNull(nombreProducto, "El nombre del producto no puede ser nulo");
+        // nombreProducto puede llegar null desde ItemCarrito cuando no se especificó al
+        // agregar al carrito
+        this.nombreProducto = (nombreProducto != null) ? nombreProducto : "Sin nombre";
         this.sku = sku;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
