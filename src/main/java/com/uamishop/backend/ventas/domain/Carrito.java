@@ -46,7 +46,8 @@ public class Carrito {
     private Money descuento;
 
     // Constructor vacío para JPA
-    protected Carrito(UUID clienteId) { }
+    //no tiene que tener parametros, sin logica y sin validaciones. tiene que ser un constructor vacio.
+    protected Carrito() { }
 
     // Constructor para crear un nuevo carrito
     public Carrito(ClienteId clienteId) {

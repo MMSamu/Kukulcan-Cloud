@@ -27,13 +27,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CarritoControllerIntegrationTest {
 
-    private static final String BASE_URL = "/api/carritos";
+    //Se actualizo el versionamiento de la api en este test, para que coincida con el versionamiento del controller
+    private static final String BASE_URL = "/api/v1/carritos";
 
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Nested
-    @DisplayName("POST /api/carritos")
+    //Versionamineto actualizado
+    @DisplayName("POST /api/v1/carritos")
     class CrearCarrito {
 
         @Test
@@ -64,7 +66,8 @@ class CarritoControllerIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /api/carritos/{id}/productos")
+    //Versionamiento actualizado
+    @DisplayName("POST /api/v1/carritos/{id}/productos")
     class AgregarProducto {
 
         @Test
