@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * NO debe ser usada directamente por otros módulos.
  */
 @Service
-class CatalogoService implements CatalogoApi {
+public class CatalogoService implements CatalogoApi {
 
     private final ProductoRepository productoRepository;
 
