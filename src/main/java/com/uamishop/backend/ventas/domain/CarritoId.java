@@ -15,4 +15,8 @@ public record CarritoId(UUID value) {
     public static CarritoId generar() {
         return new CarritoId(UUID.randomUUID());
     }
+
+    public UUID getValor() {
+        return value;
+    }
 }

@@ -17,10 +17,12 @@ public class ClienteId {
     }
 
     private ClienteId(UUID valor) {
+
         this.valor = Objects.requireNonNull(valor, "El ID del cliente no puede ser nulo");
     }
 
     public static ClienteId generar() {
+
         return new ClienteId(UUID.randomUUID());
     }
 
