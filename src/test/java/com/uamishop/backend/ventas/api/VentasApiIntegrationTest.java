@@ -26,11 +26,20 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 class VentasApiIntegrationTest {
 
-    @Autowired private VentasApi ventasApi;
-    @Autowired private CarritoService carritoService;
-    @Autowired private ProductoRepository productoRepository;
-    @Autowired private CategoriaRepository categoriaRepository;
-    @Autowired private EntityManager entityManager;
+    @Autowired 
+    private VentasApi ventasApi; // Inyectamos la API para probarla directamente
+    
+    @Autowired 
+    private CarritoService carritoService; // Inyectamos el servicio para manipular el carrito durante las pruebas
+
+    @Autowired 
+    private ProductoRepository productoRepository; // Inyectamos el repositorio para crear productos de prueba
+
+    @Autowired 
+    private CategoriaRepository categoriaRepository; // Inyectamos el repositorio para crear categorías de prueba
+
+    @Autowired 
+    private EntityManager entityManager; // Inyectamos el EntityManager para manejar transacciones y persistencia durante las pruebas
 
     @Test
     void debeObtenerResumenCorrectamente() {
@@ -38,12 +47,13 @@ class VentasApiIntegrationTest {
         CategoriaId catId = new CategoriaId(UUID.randomUUID());
         categoriaRepository.save(new Categoria(catId, "General", "Desc"));
 
+        // Creamos un producto con una imagen y lo activamos
         Imagen.ProductoId idCata = Imagen.ProductoId.generar();
         Producto producto = Producto.reconstruir(idCata, "Laptop", "Desc", Money.pesos(100.0), catId, false, LocalDateTime.now());
         producto.agregarImagen(new Imagen("https://uami.mx/t.jpg", "T", 1));
         producto.activar();
         productoRepository.save(producto);
-        entityManager.flush();
+        entityManager.flush(); // Sirve para asegurar que el producto se guarde en la base de datos antes de continuar con la prueba
 
         Carrito carrito = carritoService.crear(ClienteId.de(UUID.randomUUID()));
         carritoService.agregarProducto(carrito.getId(), new ProductoId(idCata.valor()), 2);
@@ -63,13 +73,14 @@ class VentasApiIntegrationTest {
         CategoriaId catId = new CategoriaId(UUID.randomUUID());
         categoriaRepository.save(new Categoria(catId, "General", "Desc"));
 
+        // Creamos un producto con una imagen y lo activamos
         Imagen.ProductoId idCata = Imagen.ProductoId.generar();
         Producto producto = Producto.reconstruir(idCata, "Mouse", "Desc", Money.pesos(50.0), catId, false, LocalDateTime.now());
         producto.agregarImagen(new Imagen("https://uami.mx/t.jpg", "T", 1));
         producto.activar();
         productoRepository.save(producto);
-        entityManager.flush();
-        
+        entityManager.flush(); // Sirve para asegurar que el producto se guarde en la base de datos antes de continuar con la prueba
+
         Carrito carrito = carritoService.crear(ClienteId.de(UUID.randomUUID()));
         carritoService.agregarProducto(carrito.getId(), new ProductoId(idCata.valor()), 1);
         carritoService.iniciarCheckout(carrito.getId());
