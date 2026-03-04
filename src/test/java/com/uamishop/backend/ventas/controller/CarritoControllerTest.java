@@ -93,8 +93,8 @@ class CarritoControllerTest {
             Money.pesos(request.precioMonto().doubleValue())
         );
 
-        when(carritoService.agregarProducto(any(), any(), anyInt(), any())).thenReturn(carritoActualizado);
-
+        when(carritoService.agregarProducto(any(CarritoId.class), any(ProductoId.class), anyInt())).thenReturn(carritoActualizado);
+        
         // WHEN & THEN
         mockMvc.perform(post("/api/v1/carritos/" + carritoUuid + "/productos")
                 .contentType(MediaType.APPLICATION_JSON)

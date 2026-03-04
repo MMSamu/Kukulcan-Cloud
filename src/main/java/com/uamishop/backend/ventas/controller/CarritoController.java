@@ -1,6 +1,5 @@
 package com.uamishop.backend.ventas.controller;
 
-import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.shared.domain.ClienteId;
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.ventas.controller.dto.AgregarProductoRequest;
@@ -86,15 +85,12 @@ public class CarritoController {
     public ResponseEntity<CarritoResponseDTO> agregar(@PathVariable UUID id,
             @Valid @RequestBody AgregarProductoRequest request) {
         
-        // Conversión del total del request al Value Object Money
-        Money precioDominio = Money.pesos(request.precioMonto().doubleValue());
-        
         // Se transforman los UUIDs de la URL y el Body a sus respectivos Value Objects del dominio
+        // al conectarse con catalogo no es necesario
         Carrito carrito = service.agregarProducto(
                 new CarritoId(id), 
                 new ProductoId(request.productoId()), 
-                request.cantidad(),
-                precioDominio);
+                request.cantidad());
                 
         return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
     }

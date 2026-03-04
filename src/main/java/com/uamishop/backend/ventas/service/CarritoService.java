@@ -1,6 +1,7 @@
 package com.uamishop.backend.ventas.service;
 
 import com.uamishop.backend.shared.domain.Money;
+import com.uamishop.backend.catalogo.api.CatalogoApi;
 import com.uamishop.backend.shared.domain.ClienteId; 
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.shared.exception.DomainException;
@@ -20,13 +21,16 @@ public class CarritoService implements VentasApi {
 
     // Toma el repositorio de Carrito para interactuar con la base de datos
     private final CarritoJpaRepository carritoRepository;
+    //Enlace entre el CarritoService y Catalogo
+    private final CatalogoApi catalogoApi;
 
-    // Constructor para inyectar el repositorio de Carrito
-    public CarritoService(CarritoJpaRepository carritoRepository) {
+    // Constructor para inyectar el repositorio de Carrito y el API de Catálogo
+    public CarritoService(CarritoJpaRepository carritoRepository, CatalogoApi catalogoApi) {
         this.carritoRepository = carritoRepository;
+        this.catalogoApi = catalogoApi; //aquí se "habla" al otro servidor
     }
 
-    // --- MÉTODOS PUBLICOS ---
+    // --- MÉTODOS PUBLICOS (Lo que ven otros servicios)---
 
     @Override
     @Transactional(readOnly = true)
@@ -49,15 +53,13 @@ public class CarritoService implements VentasApi {
         carritoRepository.save(carrito);
     }
 
-    // --- MÉTODOS INTERNOS ---
+    // --- MÉTODOS INTERNOS (Lógica de negocio de carrito) ---
 
     @Transactional // Maneja la transacción de forma automática
     public Carrito crear(ClienteId clienteId) {
-        // Crea un nuevo carrito de compras para un cliente específico y lo guarda en la
-        // base de datos
+        // Crea un nuevo carrito de compras para un cliente específico y lo guarda
         Carrito carrito = new Carrito(clienteId);
-        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el
-        // carrito creado
+        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el carrito creado
         return carritoRepository.save(carrito);
     }
 
@@ -70,14 +72,20 @@ public class CarritoService implements VentasApi {
     }
 
     // Método para agregar un producto al carrito de compras
+    // usando la API pública de Catálogo para el resumen
     @Transactional
-    public Carrito agregarProducto(CarritoId carritoId, ProductoId productoId, int cantidad, Money precio) {
+    public Carrito agregarProducto(CarritoId carritoId, ProductoId productoId, int cantidad) {
+        var productoResumen = catalogoApi.obtenerProducto(productoId.valor());
+        // Valida la regla de negocio
+        if (!productoResumen.disponible()) {
+            throw new DomainException("El producto no está disponible en catálogo");
+        }
+        // El precio viene como un objeto Money desde el Shared Kernel)
+        Money precioOficial = productoResumen.precio();
+        // Persistencia
         Carrito carrito = obtenerCarrito(carritoId);
-        // Agrega un producto al carrito de compras utilizando el método agregarProducto
-        // del carrito
-        carrito.agregarProducto(productoId, cantidad, precio);
-        // Guarda el carrito actualizado en la base de datos y devuelve el carrito
-        // modificado
+        carrito.agregarProducto(productoId, cantidad, precioOficial);
+        
         return carritoRepository.save(carrito);
     }
 
@@ -138,7 +146,7 @@ public class CarritoService implements VentasApi {
         return carritoRepository.save(carrito);
     }
 
-    // --- MAPPER PRIVADO ---
+    // --- MAPPER PRIVADO (Lo que ve el propio servicio) ---
 
     /* Mapea un carrito a su representación resumida */
     private CarritoResumen mapearCarritoResumen(Carrito carrito) {

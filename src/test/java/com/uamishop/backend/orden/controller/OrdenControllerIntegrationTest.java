@@ -15,8 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.shared.domain.ClienteId;
 
-import java.util.UUID;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
