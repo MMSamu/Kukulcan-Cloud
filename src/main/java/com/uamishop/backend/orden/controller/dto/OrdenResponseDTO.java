@@ -1,30 +1,29 @@
 package com.uamishop.backend.orden.controller.dto;
 
-import com.uamishop.backend.orden.domain.Orden;
+import com.uamishop.backend.orden.api.OrdenResumen;
 import java.util.UUID;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public record OrdenResponseDTO(
         UUID id,
         UUID clienteId,
-        List<ItemOrdenResponseDTO> items,
         String estado,
-        String direccionEnvio,
+        double subtotal,
+        double descuento,
         double total,
         LocalDateTime fechaCreacion,
         LocalDateTime fechaActualizacion) {
 
-    public static OrdenResponseDTO fromDomain(Orden orden) {
+    /** Construye el DTO de respuesta desde el OrdenResumen público del módulo. */
+    public static OrdenResponseDTO fromResumen(OrdenResumen resumen) {
         return new OrdenResponseDTO(
-                orden.getId().valor(),
-                orden.getClienteId(),
-                orden.getItems().stream().map(ItemOrdenResponseDTO::fromDomain).toList(),
-                orden.getEstado().name(),
-                orden.getDireccionEnvio() != null ? orden.getDireccionEnvio().toString() : "",
-                orden.getTotal().getCantidad().doubleValue(),
-                orden.getFechaCreacion(),
-                LocalDateTime.now() // Placeholder if update date is not available
-        );
+                resumen.ordenId(),
+                resumen.clienteId(),
+                resumen.estado(),
+                resumen.subtotal() != null ? resumen.subtotal().getCantidad().doubleValue() : 0.0,
+                resumen.descuento() != null ? resumen.descuento().getCantidad().doubleValue() : 0.0,
+                resumen.total() != null ? resumen.total().getCantidad().doubleValue() : 0.0,
+                resumen.fechaCreacion(),
+                LocalDateTime.now());
     }
 }
