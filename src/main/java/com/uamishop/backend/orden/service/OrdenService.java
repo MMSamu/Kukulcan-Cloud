@@ -77,8 +77,8 @@ public class OrdenService implements OrdenesApi {
         eventPublisher.publishEvent(new ProductoCompradoEvent(
             UUID.randomUUID(),
             Instant.now(),
-            guardada.getId().valor(), // Extraemos el UUID del Value Object OrdenId
-            clienteId,               // Usamos el UUID que llega por parámetro (sin getValor)
+            guardada.getId().valor(), 
+            clienteId,               
             guardada.getItems().stream()
                 .map(item -> new ProductoCompradoEvent.ItemComprado(
                     item.getProductoId(),
