@@ -10,10 +10,14 @@ import com.uamishop.backend.ventas.api.VentasApi;
 import com.uamishop.backend.ventas.domain.Carrito;
 import com.uamishop.backend.ventas.domain.CarritoId;
 import com.uamishop.backend.ventas.repository.CarritoJpaRepository;
+import com.uamishop.backend.shared.event.ProductoAgregadoAlCarritoEvent;
+
+import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -23,11 +27,14 @@ public class CarritoService implements VentasApi {
     private final CarritoJpaRepository carritoRepository;
     //Enlace entre el CarritoService y Catalogo
     private final CatalogoApi catalogoApi;
+    //Inyeccion de eventos
+    private final ApplicationEventPublisher eventPublisher;
 
     // Constructor para inyectar el repositorio de Carrito y el API de Catálogo
-    public CarritoService(CarritoJpaRepository carritoRepository, CatalogoApi catalogoApi) {
+    public CarritoService(CarritoJpaRepository carritoRepository, CatalogoApi catalogoApi, ApplicationEventPublisher eventPublisher) {
         this.carritoRepository = carritoRepository;
         this.catalogoApi = catalogoApi; //aquí se "habla" al otro servidor
+        this.eventPublisher = eventPublisher;
     }
 
     // --- MÉTODOS PUBLICOS (Lo que ven otros servicios)---
@@ -85,8 +92,20 @@ public class CarritoService implements VentasApi {
         // Persistencia
         Carrito carrito = obtenerCarrito(carritoId);
         carrito.agregarProducto(productoId, cantidad, precioOficial);
+
+        Carrito guardado = carritoRepository.save(carrito);
+
+        eventPublisher.publishEvent(new ProductoAgregadoAlCarritoEvent(
+            UUID.randomUUID(),
+            Instant.now(),
+            productoId.valor(),
+            carritoId.value(),
+            cantidad,
+            precioOficial.getCantidad(),
+            precioOficial.getMoneda()
+        ));
         
-        return carritoRepository.save(carrito);
+        return guardado;
     }
 
     // Método para modificar la cantidad de un producto en el carrito de compras
