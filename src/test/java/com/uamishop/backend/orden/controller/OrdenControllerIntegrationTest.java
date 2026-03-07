@@ -1,5 +1,6 @@
 package com.uamishop.backend.orden.controller;
 
+import java.time.Duration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uamishop.backend.orden.controller.dto.*;
 import com.uamishop.backend.shared.domain.Money;
@@ -15,6 +16,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.shared.domain.ClienteId;
 
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,7 +39,7 @@ class OrdenControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("Debe crear una orden desde el carrito correctamente (201)")
+    @DisplayName("Debe crear una orden desde el carrito correctamente (201) y completar el checkout por evento")
     void debeCrearOrdenDesdeCarrito() throws Exception {
 
         ClienteId clienteId = ClienteId.generar();
@@ -61,6 +65,15 @@ class OrdenControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.clienteId").value(clienteId.getValor().toString()))
                 .andExpect(jsonPath("$.estado").value("PENDIENTE"));
+
+        await()
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> {
+                    Carrito carritoActualizado = carritoRepository.findById(carrito.getId().getValor())
+                            .orElseThrow();
+
+                    assertEquals("COMPLETADO", carritoActualizado.getEstado().name());
+                });
     }
 
     @Test

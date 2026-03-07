@@ -34,164 +34,154 @@ import java.util.stream.Collectors;
 @Service
 public class ProductoService {
 
-    private final ProductoRepository productoRepository;
-    private final CategoriaRepository categoriaRepository;
+        private final ProductoRepository productoRepository;
+        private final CategoriaRepository categoriaRepository;
+        private final ProductoEstadisticasService estadisticasService;
 
-    public ProductoService(
-            ProductoRepository productoRepository,
-            CategoriaRepository categoriaRepository
-    ) {
-        this.productoRepository = productoRepository;
-        this.categoriaRepository = categoriaRepository;
-    }
-
-    // =====================================================
-    // CREAR PRODUCTO
-    // =====================================================
-
-    public ProductoResponse crear(ProductoRequest request) {
-
-        // ✅ Validación de regla de negocio: precio obligatorio y mayor a 0
-        if (request.precio() == null || request.precio().doubleValue() <= 0) {
-            throw new BusinessRuleException(
-                    "PRECIO_INVALIDO",
-                    "El precio del producto debe ser mayor a cero"
-            );
+        public ProductoService(
+                        ProductoRepository productoRepository,
+                        CategoriaRepository categoriaRepository,
+                        ProductoEstadisticasService estadisticasService) {
+                this.productoRepository = productoRepository;
+                this.categoriaRepository = categoriaRepository;
+                this.estadisticasService = estadisticasService;
         }
 
-        // ✅ Validar que la categoría exista
-        Categoria categoria = categoriaRepository.findById(
-                new CategoriaId(request.categoriaId())
-        ).orElseThrow(() -> new BusinessRuleException(
-                "CATEGORIA_NO_ENCONTRADA",
-                "La categoría especificada no existe"
-        ));
+        // =====================================================
+        // CREAR PRODUCTO
+        // =====================================================
 
-        // Crear producto desde el dominio
-        Producto producto = Producto.crear(
-                request.nombre(),
-                request.descripcion(),
-                Money.pesos(request.precio().doubleValue()),
-                categoria.getId()
-        );
+        public ProductoResponse crear(ProductoRequest request) {
 
-        productoRepository.save(producto);
+                // ✅ Validación de regla de negocio: precio obligatorio y mayor a 0
+                if (request.precio() == null || request.precio().doubleValue() <= 0) {
+                        throw new BusinessRuleException(
+                                        "PRECIO_INVALIDO",
+                                        "El precio del producto debe ser mayor a cero");
+                }
 
-        return toResponse(producto);
-    }
+                // ✅ Validar que la categoría exista
+                Categoria categoria = categoriaRepository.findById(
+                                new CategoriaId(request.categoriaId())).orElseThrow(
+                                                () -> new BusinessRuleException(
+                                                                "CATEGORIA_NO_ENCONTRADA",
+                                                                "La categoría especificada no existe"));
 
-    // =====================================================
-    // ACTUALIZAR PRODUCTO
-    // =====================================================
+                // Crear producto desde el dominio
+                Producto producto = Producto.crear(
+                                request.nombre(),
+                                request.descripcion(),
+                                Money.pesos(request.precio().doubleValue()),
+                                categoria.getId());
 
-    public ProductoResponse actualizar(UUID id, ProductoRequest request) {
+                productoRepository.save(producto);
 
-        Producto producto = productoRepository.findById(
-                new Imagen.ProductoId(id)
-        ).orElseThrow(() -> new BusinessRuleException(
-                "PRODUCTO_NO_ENCONTRADO",
-                "El producto no existe"
-        ));
-
-        producto.actualizarNombreYDescripcion(
-                request.nombre(),
-                request.descripcion()
-        );
-
-        if (request.precio() != null) {
-
-            if (request.precio().doubleValue() <= 0) {
-                throw new BusinessRuleException(
-                        "PRECIO_INVALIDO",
-                        "El precio del producto debe ser mayor a cero"
-                );
-            }
-
-            producto.cambiarPrecio(
-                    Money.pesos(request.precio().doubleValue())
-            );
+                return toResponse(producto);
         }
 
-        productoRepository.save(producto);
+        // =====================================================
+        // ACTUALIZAR PRODUCTO
+        // =====================================================
 
-        return toResponse(producto);
-    }
+        public ProductoResponse actualizar(UUID id, ProductoRequest request) {
 
-    // =====================================================
-    // ACTIVAR PRODUCTO
-    // =====================================================
+                Producto producto = productoRepository.findById(
+                                new Imagen.ProductoId(id)).orElseThrow(
+                                                () -> new BusinessRuleException(
+                                                                "PRODUCTO_NO_ENCONTRADO",
+                                                                "El producto no existe"));
 
-    public void activar(UUID id) {
+                producto.actualizarNombreYDescripcion(
+                                request.nombre(),
+                                request.descripcion());
 
-        Producto producto = productoRepository.findById(
-                new Imagen.ProductoId(id)
-        ).orElseThrow(() -> new BusinessRuleException(
-                "PRODUCTO_NO_ENCONTRADO",
-                "El producto no existe"
-        ));
+                if (request.precio() != null) {
 
-        producto.activar();
-        productoRepository.save(producto);
-    }
+                        if (request.precio().doubleValue() <= 0) {
+                                throw new BusinessRuleException(
+                                                "PRECIO_INVALIDO",
+                                                "El precio del producto debe ser mayor a cero");
+                        }
 
-    // =====================================================
-    // DESACTIVAR PRODUCTO
-    // =====================================================
+                        producto.cambiarPrecio(
+                                        Money.pesos(request.precio().doubleValue()));
+                }
 
-    public void desactivar(UUID id) {
+                productoRepository.save(producto);
 
-        Producto producto = productoRepository.findById(
-                new Imagen.ProductoId(id)
-        ).orElseThrow(() -> new BusinessRuleException(
-                "PRODUCTO_NO_ENCONTRADO",
-                "El producto no existe"
-        ));
+                return toResponse(producto);
+        }
 
-        producto.desactivar();
-        productoRepository.save(producto);
-    }
+        // =====================================================
+        // ACTIVAR PRODUCTO
+        // =====================================================
 
-    // =====================================================
-    // OBTENER POR ID
-    // =====================================================
+        public void activar(UUID id) {
 
-    public ProductoResponse obtenerPorId(UUID id) {
+                Producto producto = productoRepository.findById(
+                                new Imagen.ProductoId(id)).orElseThrow(
+                                                () -> new BusinessRuleException(
+                                                                "PRODUCTO_NO_ENCONTRADO",
+                                                                "El producto no existe"));
 
-        Producto producto = productoRepository.findById(
-                new Imagen.ProductoId(id)
-        ).orElseThrow(() -> new BusinessRuleException(
-                "PRODUCTO_NO_ENCONTRADO",
-                "El producto no existe"
-        ));
+                producto.activar();
+                productoRepository.save(producto);
+        }
 
-        return toResponse(producto);
-    }
+        // =====================================================
+        // DESACTIVAR PRODUCTO
+        // =====================================================
 
-    // =====================================================
-    // LISTAR TODOS
-    // =====================================================
+        public void desactivar(UUID id) {
 
-    public List<ProductoResponse> listar() {
+                Producto producto = productoRepository.findById(
+                                new Imagen.ProductoId(id)).orElseThrow(
+                                                () -> new BusinessRuleException(
+                                                                "PRODUCTO_NO_ENCONTRADO",
+                                                                "El producto no existe"));
 
-        return productoRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
+                producto.desactivar();
+                productoRepository.save(producto);
+        }
 
-    // =====================================================
-    // MAPPER DOMAIN → DTO
-    // =====================================================
+        // =====================================================
+        // OBTENER POR ID
+        // =====================================================
 
-    private ProductoResponse toResponse(Producto producto) {
-        return new ProductoResponse(
-                producto.getId().valor(),
-                producto.getNombre(),
-                producto.getDescripcion(),
-                producto.getPrecio().getCantidad(),
-                producto.getCategoriaId().valor(),
-                producto.isDisponible()
-        );
-    }
+        public ProductoResponse obtenerPorId(UUID id) {
+
+                Producto producto = productoRepository.findById(
+                                new Imagen.ProductoId(id)).orElseThrow(
+                                                () -> new BusinessRuleException(
+                                                                "PRODUCTO_NO_ENCONTRADO",
+                                                                "El producto no existe"));
+
+                return toResponse(producto);
+        }
+
+        // =====================================================
+        // LISTAR TODOS
+        // =====================================================
+
+        public List<ProductoResponse> listar() {
+
+                return productoRepository.findAll()
+                                .stream()
+                                .map(this::toResponse)
+                                .collect(Collectors.toList());
+        }
+
+        // =====================================================
+        // MAPPER DOMAIN → DTO
+        // =====================================================
+
+        private ProductoResponse toResponse(Producto producto) {
+                return new ProductoResponse(
+                                producto.getId().valor(),
+                                producto.getNombre(),
+                                producto.getDescripcion(),
+                                producto.getPrecio().getCantidad(),
+                                producto.getCategoriaId().valor(),
+                                producto.isDisponible());
+        }
 }
-

@@ -17,19 +17,21 @@ package com.uamishop.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * @class BackendApplication
  *
- * Clase principal que contiene el método main.
+ *        Clase principal que contiene el método main.
  *
- * Al ejecutarse, inicia:
- * - El contenedor de Spring
- * - El escaneo de componentes
- * - La configuración automática
- * - El servidor web embebido
+ *        Al ejecutarse, inicia:
+ *        - El contenedor de Spring
+ *        - El escaneo de componentes
+ *        - La configuración automática
+ *        - El servidor web embebido
  */
 @SpringBootApplication
+@EnableAsync
 public class BackendApplication {
 
     /**

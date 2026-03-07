@@ -13,7 +13,12 @@ import com.uamishop.backend.orden.domain.Orden;
 import com.uamishop.backend.orden.repository.OrdenJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.uamishop.backend.shared.event.OrdenCreadaEvent;
 
+import com.uamishop.backend.shared.event.ProductoCompradoEvent;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,10 +37,12 @@ public class OrdenService implements OrdenesApi {
 
     private final OrdenJpaRepository ordenRepository;
     private final CarritoService carritoService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OrdenService(OrdenJpaRepository ordenRepository, CarritoService carritoService) {
+    public OrdenService(OrdenJpaRepository ordenRepository, CarritoService carritoService, ApplicationEventPublisher eventPublisher) {
         this.ordenRepository = ordenRepository;
         this.carritoService = carritoService;
+        this.eventPublisher = eventPublisher;
     }
 
     // ── Métodos públicos (contrato de OrdenesApi) ─────────────────────────────
@@ -66,7 +73,24 @@ public class OrdenService implements OrdenesApi {
     @Transactional
     public OrdenResumen crear(UUID clienteId, DireccionEnvio direccionEnvio) {
         Orden orden = new Orden(clienteId, direccionEnvio);
-        return OrdenResumen.desde(ordenRepository.save(orden));
+        Orden guardada = ordenRepository.save(orden);
+
+        eventPublisher.publishEvent(new ProductoCompradoEvent(
+            UUID.randomUUID(),
+            Instant.now(),
+            guardada.getId().valor(), 
+            clienteId,               
+            guardada.getItems().stream()
+                .map(item -> new ProductoCompradoEvent.ItemComprado(
+                    item.getProductoId(),
+                    item.getSku(),
+                    item.getCantidad(),
+                    item.getPrecioUnitario().getCantidad(),
+                    item.getPrecioUnitario().getMoneda()
+                )).toList()
+        ));
+        
+        return OrdenResumen.desde(guardada);
     }
 
     @Override
@@ -93,11 +117,37 @@ public class OrdenService implements OrdenesApi {
             orden.aplicarDescuento(carrito.getDescuento());
         }
 
-        // 4. Cerrar el carrito
-        carrito.completarCheckout();
+        // 4. Guardar la orden
+        Orden guardada = ordenRepository.save(orden);
 
-        return OrdenResumen.desde(ordenRepository.save(orden));
+        // 5. Publicar evento para que Ventas complete el checkout
+        eventPublisher.publishEvent(new OrdenCreadaEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                carritoId.value(),
+                carrito.getClienteId().getValor()
+        ));
+
+        // 6. Publicar evento de productos comprados
+        eventPublisher.publishEvent(new ProductoCompradoEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                guardada.getClienteId(),
+                guardada.getItems().stream()
+                        .map(item -> new ProductoCompradoEvent.ItemComprado(
+                                item.getProductoId(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario().getCantidad(),
+                                item.getPrecioUnitario().getMoneda()
+                        )).toList()
+        ));
+
+        return OrdenResumen.desde(guardada);
     }
+
 
     @Override
     @Transactional
