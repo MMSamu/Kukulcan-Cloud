@@ -1,23 +1,3 @@
-/**
- * @file ProductoRepository.java
- * @brief Contrato del repositorio de dominio para el agregado Producto.
- *
- * Esta interfaz pertenece a la capa de Dominio (Domain Layer).
- *
- * Define las operaciones que pueden realizarse sobre el agregado
- * raíz Producto sin depender de ninguna tecnología de persistencia.
- *
- * Patrón aplicado:
- * - Repository Pattern
- *
- * Principio aplicado:
- * - Inversión de Dependencias (SOLID)
- *
- * Importante:
- * Esta interfaz NO debe depender de Spring, JPA ni infraestructura.
- * Solo trabaja con objetos del dominio.
- */
-
 package com.uamishop.backend.catalogo.repository;
 
 import com.uamishop.backend.catalogo.domain.*;
