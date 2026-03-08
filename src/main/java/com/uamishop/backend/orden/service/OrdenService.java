@@ -13,6 +13,7 @@ import com.uamishop.backend.orden.domain.Orden;
 import com.uamishop.backend.orden.repository.OrdenJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.uamishop.backend.shared.event.OrdenCreadaEvent;
 
 import com.uamishop.backend.shared.event.ProductoCompradoEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -116,28 +117,37 @@ public class OrdenService implements OrdenesApi {
             orden.aplicarDescuento(carrito.getDescuento());
         }
 
-        // 4. Cerrar el carrito
-        carrito.completarCheckout();
-
+        // 4. Guardar la orden
         Orden guardada = ordenRepository.save(orden);
 
+        // 5. Publicar evento para que Ventas complete el checkout
+        eventPublisher.publishEvent(new OrdenCreadaEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                carritoId.value(),
+                carrito.getClienteId().getValor()
+        ));
+
+        // 6. Publicar evento de productos comprados
         eventPublisher.publishEvent(new ProductoCompradoEvent(
-            UUID.randomUUID(),
-            Instant.now(),     
-            guardada.getId().valor(),    
-            guardada.getClienteId(),    
-            guardada.getItems().stream()
-                .map(item -> new ProductoCompradoEvent.ItemComprado(
-                    item.getProductoId(),
-                    item.getSku(),
-                    item.getCantidad(),
-                    item.getPrecioUnitario().getCantidad(),
-                    item.getPrecioUnitario().getMoneda()
-                )).toList()
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                guardada.getClienteId(),
+                guardada.getItems().stream()
+                        .map(item -> new ProductoCompradoEvent.ItemComprado(
+                                item.getProductoId(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario().getCantidad(),
+                                item.getPrecioUnitario().getMoneda()
+                        )).toList()
         ));
 
         return OrdenResumen.desde(guardada);
     }
+
 
     @Override
     @Transactional
