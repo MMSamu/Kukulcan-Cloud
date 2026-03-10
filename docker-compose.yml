@@ -27,7 +27,7 @@ services:
    build:
      context: .
      dockerfile: Dockerfile
-   image: uamishop:latest
+   image: laugzar/uamishop:latest
    container_name: uamishop
    ports:
      - "8080:8080"
