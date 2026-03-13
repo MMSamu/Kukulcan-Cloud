@@ -48,7 +48,7 @@ class VentasApiIntegrationTest {
         categoriaRepository.save(new Categoria(catId, "General", "Desc"));
 
         // Creamos un producto con una imagen y lo activamos
-        Imagen.ProductoId idCata = Imagen.ProductoId.generar();
+        ProductoId idCata = ProductoId.generar();
         Producto producto = Producto.reconstruir(idCata, "Laptop", "Desc", Money.pesos(100.0), catId, false, LocalDateTime.now());
         producto.agregarImagen(new Imagen("https://uami.mx/t.jpg", "T", 1));
         producto.activar();
@@ -74,7 +74,7 @@ class VentasApiIntegrationTest {
         categoriaRepository.save(new Categoria(catId, "General", "Desc"));
 
         // Creamos un producto con una imagen y lo activamos
-        Imagen.ProductoId idCata = Imagen.ProductoId.generar();
+        ProductoId idCata = ProductoId.generar();
         Producto producto = Producto.reconstruir(idCata, "Mouse", "Desc", Money.pesos(50.0), catId, false, LocalDateTime.now());
         producto.agregarImagen(new Imagen("https://uami.mx/t.jpg", "T", 1));
         producto.activar();

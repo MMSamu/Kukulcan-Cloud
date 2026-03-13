@@ -2,6 +2,7 @@ package com.uamishop.backend.catalogo.repository;
 
 import com.uamishop.backend.catalogo.domain.*;
 import com.uamishop.backend.shared.domain.CategoriaId;
+import com.uamishop.backend.shared.domain.ProductoId;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +36,7 @@ public interface ProductoRepository {
      * @param id identificador del producto (Value Object)
      * @return Optional con el producto si existe
      */
-    Optional<Producto> findById(Imagen.ProductoId id);
+    Optional<Producto> findById(ProductoId id);
 
     /**
      * Obtiene todos los productos almacenados.
@@ -57,7 +58,7 @@ public interface ProductoRepository {
      *
      * @param id identificador del producto
      */
-    void deleteById(Imagen.ProductoId id);
+    void deleteById(ProductoId id);
 
     /**
      * Verifica si un producto existe.
@@ -65,5 +66,5 @@ public interface ProductoRepository {
      * @param id identificador del producto
      * @return true si existe, false en caso contrario
      */
-    boolean existsById(Imagen.ProductoId id);
+    boolean existsById(ProductoId id);
 }

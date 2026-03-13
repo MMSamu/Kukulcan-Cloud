@@ -169,10 +169,10 @@ public class Imagen {
      * - Es inmutable.
      * - Se compara por valor.
      */
-    public static class ProductoId {
+    /**public static class ProductoId {
 
         /** UUID interno que representa el identificador */
-        private final UUID valor;
+       // private final UUID valor;
 
         /**
          * Constructor principal.
@@ -182,22 +182,22 @@ public class Imagen {
          * @param valor UUID del producto
          * @throws NullPointerException si el valor es null
          */
-        public ProductoId(UUID valor) {
+       // public ProductoId(UUID valor) {
 
             // requireNonNull lanza NullPointerException si es null
-            this.valor = Objects.requireNonNull(valor);
-        }
+           // this.valor = Objects.requireNonNull(valor);
+      //  }
 
         /**
          * Método fábrica para generar un nuevo identificador.
          *
          * @return nueva instancia de ProductoId con UUID aleatorio
          */
-        public static ProductoId generar() {
+        //public static ProductoId generar() {
 
             // UUID.randomUUID() crea un identificador único universal
-            return new ProductoId(UUID.randomUUID());
-        }
+           // return new ProductoId(UUID.randomUUID());
+        //}
 
 
         /**
@@ -205,9 +205,9 @@ public class Imagen {
          *
          * @return valor interno UUID
          */
-        public UUID valor() {
-            return valor;
-        }
+       // public UUID valor() {
+        //    return valor;
+        //}
 
         /**
          * Compara dos ProductoId por valor.
@@ -217,15 +217,15 @@ public class Imagen {
          * @param o objeto a comparar
          * @return true si representan el mismo ID
          */
-        @Override
-        public boolean equals(Object o) {
+        //@Override
+       // public boolean equals(Object o) {
 
-            if (this == o) return true;
+           // if (this == o) return true;
 
-            if (!(o instanceof ProductoId that)) return false;
+           // if (!(o instanceof ProductoId that)) return false;
 
-            return valor.equals(that.valor);
-        }
+            //return valor.equals(that.valor);
+        //}
 
         /**
          * Genera el hash basado en el UUID.
@@ -234,10 +234,10 @@ public class Imagen {
          *
          * @return hash del identificador
          */
-        @Override
+        /**@Override
         public int hashCode() {
             return valor.hashCode();
-        }
+        }*/
 
         /**
          * Representación en texto del identificador.
@@ -246,13 +246,13 @@ public class Imagen {
          *
          * @return UUID en formato String
          */
-        @Override
+       /** @Override
         public String toString() {
             return valor.toString();
         }
 
         public UUID getValue() {
             return valor;
-        }
-    }
+        }*/
+
 }

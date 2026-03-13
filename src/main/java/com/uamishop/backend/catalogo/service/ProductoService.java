@@ -1,25 +1,8 @@
-/**
- * @file ProductoService.java
- * @brief Servicio de aplicación que gestiona los casos de uso del agregado Producto.
- *
- * Esta clase pertenece a la capa Application (Service Layer).
- *
- * Responsabilidades:
- * - Orquestar casos de uso relacionados con Producto.
- * - Validar reglas de aplicación (como existencia de categoría).
- * - Coordinar repositorios.
- * - Convertir entre DTOs y objetos de dominio.
- *
- * Importante:
- * - No contiene lógica de persistencia.
- * - No contiene detalles de infraestructura.
- * - Las reglas de negocio se validan aquí y en el dominio.
- */
-
 package com.uamishop.backend.catalogo.service;
 
 import com.uamishop.backend.catalogo.repository.ProductoRepository;
 import com.uamishop.backend.catalogo.repository.CategoriaRepository;
+import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.catalogo.domain.*;
 import com.uamishop.backend.shared.domain.CategoriaId;
 import com.uamishop.backend.shared.domain.Money;
@@ -86,7 +69,7 @@ public class ProductoService {
         public ProductoResponse actualizar(UUID id, ProductoRequest request) {
 
                 Producto producto = productoRepository.findById(
-                                new Imagen.ProductoId(id)).orElseThrow(
+                                new ProductoId(id)).orElseThrow(
                                                 () -> new BusinessRuleException(
                                                                 "PRODUCTO_NO_ENCONTRADO",
                                                                 "El producto no existe"));
@@ -119,7 +102,7 @@ public class ProductoService {
         public void activar(UUID id) {
 
                 Producto producto = productoRepository.findById(
-                                new Imagen.ProductoId(id)).orElseThrow(
+                                new ProductoId(id)).orElseThrow(
                                                 () -> new BusinessRuleException(
                                                                 "PRODUCTO_NO_ENCONTRADO",
                                                                 "El producto no existe"));
@@ -135,7 +118,7 @@ public class ProductoService {
         public void desactivar(UUID id) {
 
                 Producto producto = productoRepository.findById(
-                                new Imagen.ProductoId(id)).orElseThrow(
+                                new ProductoId(id)).orElseThrow(
                                                 () -> new BusinessRuleException(
                                                                 "PRODUCTO_NO_ENCONTRADO",
                                                                 "El producto no existe"));
@@ -151,7 +134,7 @@ public class ProductoService {
         public ProductoResponse obtenerPorId(UUID id) {
 
                 Producto producto = productoRepository.findById(
-                                new Imagen.ProductoId(id)).orElseThrow(
+                                new ProductoId(id)).orElseThrow(
                                                 () -> new BusinessRuleException(
                                                                 "PRODUCTO_NO_ENCONTRADO",
                                                                 "El producto no existe"));
@@ -177,7 +160,7 @@ public class ProductoService {
 
         private ProductoResponse toResponse(Producto producto) {
                 return new ProductoResponse(
-                                producto.getId().valor(),
+                                producto.getId().getValor(),
                                 producto.getNombre(),
                                 producto.getDescripcion(),
                                 producto.getPrecio().getCantidad(),

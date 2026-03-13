@@ -1,10 +1,3 @@
-/**
- * @file ProductoController.java
- * @brief Controlador REST encargado de gestionar las operaciones CRUD de productos.
- *
- * Expone endpoints para crear, consultar, actualizar, activar y desactivar productos.
- * Utiliza ProductoService para delegar la lógica de negocio.
- */
 package com.uamishop.backend.catalogo.controller;
 
 import com.uamishop.backend.catalogo.service.ProductoService;

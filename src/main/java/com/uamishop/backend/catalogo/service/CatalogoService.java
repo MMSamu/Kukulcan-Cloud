@@ -2,7 +2,7 @@ package com.uamishop.backend.catalogo.service;
 
 import com.uamishop.backend.catalogo.api.CatalogoApi;
 import com.uamishop.backend.catalogo.domain.Producto;
-import com.uamishop.backend.catalogo.domain.Imagen;
+import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.catalogo.api.ProductoResumen;
 import com.uamishop.backend.catalogo.repository.ProductoRepository;
 import com.uamishop.backend.shared.domain.CategoriaId;
@@ -29,7 +29,7 @@ public class CatalogoService implements CatalogoApi {
     public ProductoResumen obtenerProducto(UUID productoId) {
 
         Producto producto = productoRepository
-                .findById(new Imagen.ProductoId(productoId))
+                .findById(new ProductoId(productoId))
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         return mapear(producto);
@@ -55,7 +55,7 @@ public class CatalogoService implements CatalogoApi {
 
     private ProductoResumen mapear(Producto producto) {
         return new ProductoResumen(
-                producto.getId().getValue(),  // convertimos a UUID
+                producto.getId().getValor(),  // convertimos a UUID
                 producto.getNombre(),
                 producto.getDescripcion(),
                 producto.getPrecio(),
