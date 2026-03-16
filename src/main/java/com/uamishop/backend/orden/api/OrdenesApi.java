@@ -4,7 +4,7 @@
 
 package com.uamishop.backend.orden.api;
 
-import com.uamishop.backend.ventas.domain.CarritoId;
+
 import com.uamishop.backend.orden.domain.DireccionEnvio;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public interface OrdenesApi {
     OrdenResumen crear(UUID clienteId, DireccionEnvio direccionEnvio);
 
     /** Crea una orden a partir de un carrito existente. */
-    OrdenResumen crearDesdeCarrito(CarritoId carritoId, DireccionEnvio direccionEnvio);
+    OrdenResumen crearDesdeCarrito(UUID carritoId, DireccionEnvio direccionEnvio);
 
     /** Confirma una orden en estado PENDIENTE. */
     OrdenResumen confirmar(UUID ordenId);

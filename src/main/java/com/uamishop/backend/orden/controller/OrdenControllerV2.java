@@ -5,7 +5,7 @@ import com.uamishop.backend.orden.api.OrdenResumen;
 import com.uamishop.backend.orden.controller.dto.*;
 import com.uamishop.backend.orden.domain.DireccionEnvio;
 import com.uamishop.backend.shared.exception.ApiError;
-import com.uamishop.backend.ventas.domain.CarritoId;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -75,7 +75,7 @@ public class OrdenControllerV2 {
                                 request.codigoPostal(),
                                 request.telefonoContacto());
 
-                OrdenResumen resumen = ordenesApi.crearDesdeCarrito(new CarritoId(id), direccion);
+                OrdenResumen resumen = ordenesApi.crearDesdeCarrito(id, direccion);
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(OrdenResponseDTO.fromResumen(resumen));
         }

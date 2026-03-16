@@ -1,9 +1,8 @@
 package com.uamishop.backend.orden.service;
 
 import com.uamishop.backend.shared.exception.DomainException;
-import com.uamishop.backend.ventas.domain.Carrito;
-import com.uamishop.backend.ventas.domain.CarritoId;
-import com.uamishop.backend.ventas.service.CarritoService;
+import com.uamishop.backend.ventas.api.CarritoResumen;
+import com.uamishop.backend.ventas.api.VentasApi;
 import com.uamishop.backend.orden.api.DatosResumen;
 import com.uamishop.backend.orden.api.OrdenesApi;
 import com.uamishop.backend.orden.api.OrdenResumen;
@@ -36,12 +35,13 @@ public class OrdenService implements OrdenesApi {
     // ── Dependencias ──────────────────────────────────────────────────────────
 
     private final OrdenJpaRepository ordenRepository;
-    private final CarritoService carritoService;
+    private final VentasApi ventasApi;
     private final ApplicationEventPublisher eventPublisher;
 
-    public OrdenService(OrdenJpaRepository ordenRepository, CarritoService carritoService, ApplicationEventPublisher eventPublisher) {
+    public OrdenService(OrdenJpaRepository ordenRepository, VentasApi ventasApi,
+            ApplicationEventPublisher eventPublisher) {
         this.ordenRepository = ordenRepository;
-        this.carritoService = carritoService;
+        this.ventasApi = ventasApi;
         this.eventPublisher = eventPublisher;
     }
 
@@ -76,60 +76,53 @@ public class OrdenService implements OrdenesApi {
         Orden guardada = ordenRepository.save(orden);
 
         eventPublisher.publishEvent(new ProductoCompradoEvent(
-            UUID.randomUUID(),
-            Instant.now(),
-            guardada.getId().valor(), 
-            clienteId,               
-            guardada.getItems().stream()
-                .map(item -> new ProductoCompradoEvent.ItemComprado(
-                    item.getProductoId(),
-                    item.getSku(),
-                    item.getCantidad(),
-                    item.getPrecioUnitario().getCantidad(),
-                    item.getPrecioUnitario().getMoneda()
-                )).toList()
-        ));
-        
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                clienteId,
+                guardada.getItems().stream()
+                        .map(item -> new ProductoCompradoEvent.ItemComprado(
+                                item.getProductoId(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario().getCantidad(),
+                                item.getPrecioUnitario().getMoneda()))
+                        .toList()));
+
         return OrdenResumen.desde(guardada);
     }
 
     @Override
     @Transactional
-    public OrdenResumen crearDesdeCarrito(CarritoId carritoId, DireccionEnvio direccionEnvio) {
-        // 1. Obtener el carrito
-        Carrito carrito = carritoService.obtenerCarrito(carritoId);
+    public OrdenResumen crearDesdeCarrito(UUID carritoId, DireccionEnvio direccionEnvio) {
+        // 1. Obtener el resumen del carrito a través de la API pública de Ventas
+        CarritoResumen carrito = ventasApi.obtenerResumen(carritoId);
 
         // 2. Construir la Orden con los datos del carrito
-        Orden orden = new Orden(carrito.getClienteId().getValor(), direccionEnvio);
+        Orden orden = new Orden(carrito.clienteId().getValor(), direccionEnvio);
 
-        for (com.uamishop.backend.ventas.domain.ItemCarrito itemCarrito : carrito.getItems()) {
+        for (CarritoResumen.ItemCarritoResumen itemCarrito : carrito.items()) {
             ItemOrden itemOrden = ItemOrden.crear(
-                    itemCarrito.getProductoId().valor(),
-                    itemCarrito.getNombreProducto(),
-                    itemCarrito.getSku(),
-                    itemCarrito.getCantidad(),
-                    itemCarrito.getPrecioUnitario());
+                    itemCarrito.productoId().valor(),
+                    itemCarrito.nombreProducto(),
+                    itemCarrito.sku(),
+                    itemCarrito.cantidad(),
+                    itemCarrito.precioUnitario());
             orden.agregarItem(itemOrden);
         }
 
-        // 3. Aplicar descuento si el carrito tenía uno
-        if (carrito.getDescuento() != null && carrito.getDescuento().esPositivo()) {
-            orden.aplicarDescuento(carrito.getDescuento());
-        }
-
-        // 4. Guardar la orden
+        // 3. Guardar la orden
         Orden guardada = ordenRepository.save(orden);
 
-        // 5. Publicar evento para que Ventas complete el checkout
+        // 4. Publicar evento para que Ventas complete el checkout
         eventPublisher.publishEvent(new OrdenCreadaEvent(
                 UUID.randomUUID(),
                 Instant.now(),
                 guardada.getId().valor(),
-                carritoId.value(),
-                carrito.getClienteId().getValor()
-        ));
+                carritoId,
+                carrito.clienteId().getValor()));
 
-        // 6. Publicar evento de productos comprados
+        // 5. Publicar evento de productos comprados
         eventPublisher.publishEvent(new ProductoCompradoEvent(
                 UUID.randomUUID(),
                 Instant.now(),
@@ -141,13 +134,11 @@ public class OrdenService implements OrdenesApi {
                                 item.getSku(),
                                 item.getCantidad(),
                                 item.getPrecioUnitario().getCantidad(),
-                                item.getPrecioUnitario().getMoneda()
-                        )).toList()
-        ));
+                                item.getPrecioUnitario().getMoneda()))
+                        .toList()));
 
         return OrdenResumen.desde(guardada);
     }
-
 
     @Override
     @Transactional
