@@ -21,6 +21,20 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: uamishop-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
   uamishop:
     image: sebastiantj/uamishop:latest
     container_name: uamishop
@@ -31,8 +45,29 @@ services:
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
       SPRING_DATASOURCE_USERNAME: uamishop
       SPRING_DATASOURCE_PASSWORD: uamishop
+      SPRING_RABBITMQ_HOST: rabbitmq
+      CATALOGO_SERVICE_URL: "http://uamishop-catalogo:8081"
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  uamishop-catalogo:
+    image: sebastiantj/uamishop-catalogo:latest
+    container_name: uamishop-catalogo
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_catalogo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: uamishop
+      SPRING_DATASOURCE_PASSWORD: uamishop
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     restart: unless-stopped
 
