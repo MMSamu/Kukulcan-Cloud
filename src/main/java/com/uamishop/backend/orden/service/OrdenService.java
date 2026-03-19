@@ -3,6 +3,7 @@ package com.uamishop.backend.orden.service;
 import com.uamishop.backend.shared.exception.DomainException;
 import com.uamishop.backend.ventas.api.CarritoResumen;
 import com.uamishop.backend.ventas.api.VentasApi;
+import com.uamishop.backend.RabbitConfig;
 import com.uamishop.backend.orden.api.DatosResumen;
 import com.uamishop.backend.orden.api.OrdenesApi;
 import com.uamishop.backend.orden.api.OrdenResumen;
@@ -16,6 +17,7 @@ import com.uamishop.backend.shared.event.OrdenCreadaEvent;
 
 import com.uamishop.backend.shared.event.ProductoCompradoEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,12 +39,14 @@ public class OrdenService implements OrdenesApi {
     private final OrdenJpaRepository ordenRepository;
     private final VentasApi ventasApi;
     private final ApplicationEventPublisher eventPublisher;
+    private final RabbitTemplate rabbitTemplate;
 
     public OrdenService(OrdenJpaRepository ordenRepository, VentasApi ventasApi,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher, RabbitTemplate rabbitTemplate) {
         this.ordenRepository = ordenRepository;
         this.ventasApi = ventasApi;
         this.eventPublisher = eventPublisher;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     // ── Métodos públicos (contrato de OrdenesApi) ─────────────────────────────
@@ -88,6 +92,12 @@ public class OrdenService implements OrdenesApi {
                                 item.getPrecioUnitario().getCantidad(),
                                 item.getPrecioUnitario().getMoneda()))
                         .toList()));
+
+        // Publicar evento via RabbitMQ
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EVENTS_EXCHANGE,
+                RabbitConfig.RK_PRODUCTO_COMPRADO,
+                eventPublisher);
 
         return OrdenResumen.desde(guardada);
     }
@@ -136,6 +146,12 @@ public class OrdenService implements OrdenesApi {
                                 item.getPrecioUnitario().getCantidad(),
                                 item.getPrecioUnitario().getMoneda()))
                         .toList()));
+
+        // 6. Publicaer evento via RabbitMQ
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EVENTS_EXCHANGE,
+                RabbitConfig.RK_PRODUCTO_COMPRADO,
+                eventPublisher);
 
         return OrdenResumen.desde(guardada);
     }
