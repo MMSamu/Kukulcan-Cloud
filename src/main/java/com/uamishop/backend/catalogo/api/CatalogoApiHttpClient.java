@@ -1,6 +1,62 @@
 package com.uamishop.backend.catalogo.api;
 
-import java.math.BigDecimal;
+/**
+ * @class CatalogoApiHttpClient
+ * @brief Adaptador que implementa CatalogoApi usando llamadas REST.
+ *
+ * @details
+ * Esta clase permite consumir el microservicio de catálogo sin modificar
+ * los módulos que ya dependen de CatalogoApi.
+ *
+ * Se encarga de redirigir las llamadas a endpoints HTTP.
+ *
+ * @note
+ * No incluye mecanismos de resiliencia como CircuitBreaker.
+ */
+@Component
+public class CatalogoApiHttpClient implements CatalogoApi {
+
+    private final RestTemplate restTemplate;
+    private final String catalogoBaseUrl;
+
+    /**
+     * @brief Constructor del cliente HTTP de catálogo.
+     *
+     * @param restTemplate Cliente para realizar peticiones HTTP.
+     * @param catalogoBaseUrl URL base del microservicio de catálogo.
+     */
+    public CatalogoApiHttpClient(RestTemplate restTemplate,
+                                 @Value("${catalogo.service.url}") String catalogoBaseUrl) {
+        this.restTemplate = restTemplate;
+        this.catalogoBaseUrl = catalogoBaseUrl;
+    }
+
+    /**
+     * @brief Obtiene un producto desde el microservicio vía REST.
+     *
+     * @param productoId ID del producto a buscar.
+     * @return Optional con el producto si existe, o vacío si no se encuentra.
+     */
+    @Override
+    public Optional<ProductoInfoDto> obtenerProducto(UUID productoId) {
+        String url = catalogoBaseUrl + "/api/v1/productos/" + productoId;
+
+        try {
+            ResponseEntity<ProductoInfoDto> response =
+                    restTemplate.getForEntity(url, ProductoInfoDto.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(response.getBody());
+
+        } catch (HttpClientErrorException.NotFound e) {
+            return Optional.empty();
+        }
+    }
+}
+/**import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +81,7 @@ import com.uamishop.backend.shared.domain.Money;
  * Se activa cuando Catálogo está externalizado (perfil distinto a
  * catalogo-local).
  */
-@Component
+/**@Component
 public class CatalogoApiHttpClient implements CatalogoApi {
 
     private final RestTemplate restTemplate;
@@ -118,4 +174,4 @@ public class CatalogoApiHttpClient implements CatalogoApi {
             double precio,
             boolean disponible) {
     }
-}
+}*/

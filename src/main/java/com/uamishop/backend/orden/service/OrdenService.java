@@ -79,7 +79,34 @@ public class OrdenService implements OrdenesApi {
         Orden orden = new Orden(clienteId, direccionEnvio);
         Orden guardada = ordenRepository.save(orden);
 
-        eventPublisher.publishEvent(new ProductoCompradoEvent(
+        // Crear el evento UNA sola vez
+        ProductoCompradoEvent event = new ProductoCompradoEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                clienteId,
+                guardada.getItems().stream()
+                        .map(item -> new ProductoCompradoEvent.ItemComprado(
+                                item.getProductoId(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario().getCantidad(),
+                                item.getPrecioUnitario().getMoneda()))
+                        .toList());
+
+        // Evento interno (Spring)
+        eventPublisher.publishEvent(event);
+
+        // Evento externo (RabbitMQ)
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EVENTS_EXCHANGE,
+                RabbitConfig.RK_PRODUCTO_COMPRADO,
+                event);
+
+        return OrdenResumen.desde(guardada);
+    }
+
+        /**eventPublisher.publishEvent(new ProductoCompradoEvent(
                 UUID.randomUUID(),
                 Instant.now(),
                 guardada.getId().valor(),
@@ -100,7 +127,7 @@ public class OrdenService implements OrdenesApi {
                 eventPublisher);
 
         return OrdenResumen.desde(guardada);
-    }
+    }*/
 
     @Override
     @Transactional
@@ -132,8 +159,34 @@ public class OrdenService implements OrdenesApi {
                 carritoId,
                 carrito.clienteId().getValor()));
 
-        // 5. Publicar evento de productos comprados
-        eventPublisher.publishEvent(new ProductoCompradoEvent(
+        // Crear evento de producto comprado
+        ProductoCompradoEvent event = new ProductoCompradoEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                guardada.getId().valor(),
+                guardada.getClienteId(),
+                guardada.getItems().stream()
+                        .map(item -> new ProductoCompradoEvent.ItemComprado(
+                                item.getProductoId(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario().getCantidad(),
+                                item.getPrecioUnitario().getMoneda()))
+                        .toList());
+
+        // Evento interno
+        eventPublisher.publishEvent(event);
+
+        // Evento RabbitMQ (CORREGIDO)
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EVENTS_EXCHANGE,
+                RabbitConfig.RK_PRODUCTO_COMPRADO,
+                event);
+
+        return OrdenResumen.desde(guardada);
+    }
+
+        /**eventPublisher.publishEvent(new ProductoCompradoEvent(
                 UUID.randomUUID(),
                 Instant.now(),
                 guardada.getId().valor(),
@@ -154,7 +207,7 @@ public class OrdenService implements OrdenesApi {
                 eventPublisher);
 
         return OrdenResumen.desde(guardada);
-    }
+    }*/
 
     @Override
     @Transactional
