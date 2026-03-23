@@ -7,7 +7,6 @@ import com.uamishop.backend.ventas.controller.dto.CarritoMapper;
 import com.uamishop.backend.ventas.controller.dto.CarritoRequest;
 import com.uamishop.backend.ventas.controller.dto.CarritoResponseDTO;
 import com.uamishop.backend.ventas.controller.dto.ModificarCantidadRequest;
-import com.uamishop.backend.ventas.domain.*;
 import com.uamishop.backend.ventas.service.CarritoService;
 import com.uamishop.backend.shared.exception.ApiError;
 
