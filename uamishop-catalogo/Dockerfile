@@ -11,4 +11,4 @@ COPY target/*.jar app.jar
 EXPOSE 8081
 
 # Comando para ejecutar la aplicación
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
