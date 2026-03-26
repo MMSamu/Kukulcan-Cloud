@@ -1,7 +1,8 @@
-package com.uamishop.backend.catalogo.api;
+package com.uamishop.catalogo.api;
 
-import com.uamishop.backend.shared.domain.Money;
+import com.uamishop.shared.domain.Money;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -12,22 +13,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Implementación de CatalogoApi que consume el microservicio de Catálogo vía HTTP.
+ * Se activa cuando el catálogo ya fue externalizado.
+ */
 @Component
+@Profile("!catalogo-local")
 public class CatalogoApiHttpClient implements CatalogoApi {
 
     private final RestTemplate restTemplate;
     private final String catalogoBaseUrl;
 
-    public CatalogoApiHttpClient(RestTemplate restTemplate,
-                                 @Value("${catalogo.service.url}") String catalogoBaseUrl) {
+    public CatalogoApiHttpClient(
+            RestTemplate restTemplate,
+            @Value("${catalogo.service.url}") String catalogoBaseUrl) {
         this.restTemplate = restTemplate;
         this.catalogoBaseUrl = catalogoBaseUrl;
     }
 
     @Override
     public ProductoResumen obtenerProducto(UUID productoId) {
-        // CORRECCIÓN: Usamos /api/productos/ sin el v1
-        String url = catalogoBaseUrl + "/api/productos/" + productoId;
+        String url = catalogoBaseUrl + "/api/v1/productos/" + productoId;
         try {
             ResponseEntity<ProductoResponse> response = restTemplate.getForEntity(url, ProductoResponse.class);
 
@@ -43,7 +49,7 @@ public class CatalogoApiHttpClient implements CatalogoApi {
 
     @Override
     public List<ProductoResumen> listarProductos() {
-        String url = catalogoBaseUrl + "/api/productos";
+        String url = catalogoBaseUrl + "/api/v1/productos";
         try {
             ResponseEntity<ProductoResponse[]> response = restTemplate.getForEntity(url, ProductoResponse[].class);
 
@@ -61,7 +67,7 @@ public class CatalogoApiHttpClient implements CatalogoApi {
 
     @Override
     public List<ProductoResumen> listarPorCategoria(UUID categoriaId) {
-        String url = catalogoBaseUrl + "/api/productos?categoriaId=" + categoriaId;
+        String url = catalogoBaseUrl + "/api/v1/productos?categoriaId=" + categoriaId;
         try {
             ResponseEntity<ProductoResponse[]> response = restTemplate.getForEntity(url, ProductoResponse[].class);
 
@@ -78,21 +84,19 @@ public class CatalogoApiHttpClient implements CatalogoApi {
     }
 
     private ProductoResumen mapear(ProductoResponse dto) {
-        // Usamos dto.id() y dto.activo() porque así viene en tu JSON de catálogo
         return new ProductoResumen(
-                dto.id(), 
+                dto.productoId(),
                 dto.nombre(),
                 dto.descripcion(),
                 Money.pesos(dto.precio()),
-                dto.activo());
+                dto.disponible());
     }
 
-    // DTO corregido para coincidir con el JSON real del microservicio Catálogo
     private record ProductoResponse(
-            UUID id, 
+            UUID productoId,
             String nombre,
             String descripcion,
             double precio,
-            boolean activo) {
+            boolean disponible) {
     }
 }

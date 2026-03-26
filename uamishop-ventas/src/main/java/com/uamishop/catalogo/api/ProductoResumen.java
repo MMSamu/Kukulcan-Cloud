@@ -1,6 +1,6 @@
 package com.uamishop.catalogo.api;
 
-import com.uamishop.backend.shared.domain.Money;
+import com.uamishop.shared.domain.Money;
 import java.util.UUID;
 
 public record ProductoResumen(
