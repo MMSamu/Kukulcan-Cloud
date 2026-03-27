@@ -36,17 +36,18 @@ services:
     restart: unless-stopped
 
   uamishop:
-    image: sebastiantj/uamishop:latest
+    build: ./uamishop
     container_name: uamishop
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: mysql
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop?useSSL=false"
       SPRING_DATASOURCE_USERNAME: uamishop
       SPRING_DATASOURCE_PASSWORD: uamishop
       SPRING_RABBITMQ_HOST: rabbitmq
       CATALOGO_SERVICE_URL: "http://uamishop-catalogo:8081"
+      ORDEN_SERVICE_URL: "http://uamishop-orden:8082"
     depends_on:
       mysql:
         condition: service_healthy
@@ -55,12 +56,27 @@ services:
     restart: unless-stopped
 
   uamishop-catalogo:
-    image: sebastiantj/uamishop-catalogo:latest
+    build: ./uamishop-catalogo
     container_name: uamishop-catalogo
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_catalogo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_catalogo?useSSL=false"
+      SPRING_DATASOURCE_USERNAME: uamishop
+      SPRING_DATASOURCE_PASSWORD: uamishop
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  uamishop-orden:
+    build: ./uamishop-orden
+    container_name: uamishop-orden
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_orden?useSSL=false"
       SPRING_DATASOURCE_USERNAME: uamishop
       SPRING_DATASOURCE_PASSWORD: uamishop
       SPRING_RABBITMQ_HOST: rabbitmq

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import com.uamishop.backend.shared.domain.Money;
  * Se activa cuando Catálogo está externalizado (perfil distinto a
  * catalogo-local).
  */
+@Primary
 @Component
 public class CatalogoApiHttpClient implements CatalogoApi {
 

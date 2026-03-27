@@ -2,7 +2,7 @@ package com.uamishop.backend.ventas.service;
 
 import com.uamishop.backend.shared.domain.Money;
 import com.uamishop.backend.catalogo.api.CatalogoApi;
-import com.uamishop.backend.shared.domain.ClienteId; 
+import com.uamishop.backend.shared.domain.ClienteId;
 import com.uamishop.backend.shared.domain.ProductoId;
 import com.uamishop.backend.shared.exception.DomainException;
 import com.uamishop.backend.ventas.api.CarritoResumen;
@@ -14,26 +14,29 @@ import com.uamishop.backend.shared.event.ProductoAgregadoAlCarritoEvent;
 
 import org.springframework.context.ApplicationEventPublisher;
 
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Primary
 @Service
 public class CarritoService implements VentasApi {
 
     // Toma el repositorio de Carrito para interactuar con la base de datos
     private final CarritoJpaRepository carritoRepository;
-    //Enlace entre el CarritoService y Catalogo
+    // Enlace entre el CarritoService y Catalogo
     private final CatalogoApi catalogoApi;
-    //Inyeccion de eventos
+    // Inyeccion de eventos
     private final ApplicationEventPublisher eventPublisher;
 
     // Constructor para inyectar el repositorio de Carrito y el API de Catálogo
-    public CarritoService(CarritoJpaRepository carritoRepository, CatalogoApi catalogoApi, ApplicationEventPublisher eventPublisher) {
+    public CarritoService(CarritoJpaRepository carritoRepository, CatalogoApi catalogoApi,
+            ApplicationEventPublisher eventPublisher) {
         this.carritoRepository = carritoRepository;
-        this.catalogoApi = catalogoApi; //aquí se "habla" al otro servidor
+        this.catalogoApi = catalogoApi; // aquí se "habla" al otro servidor
         this.eventPublisher = eventPublisher;
     }
 
@@ -50,11 +53,11 @@ public class CarritoService implements VentasApi {
 
     @Override
     @Transactional
-    public void completarCheckoutPublico(UUID carritoId) { 
+    public void completarCheckoutPublico(UUID carritoId) {
         // Convierte el UUID al Value Object del dominio
         CarritoId id = new CarritoId(carritoId);
-        
-        //Ejecuta la lógica directamente
+
+        // Ejecuta la lógica directamente
         Carrito carrito = obtenerCarrito(id);
         carrito.completarCheckout();
         carritoRepository.save(carrito);
@@ -66,7 +69,8 @@ public class CarritoService implements VentasApi {
     public Carrito crear(ClienteId clienteId) {
         // Crea un nuevo carrito de compras para un cliente específico y lo guarda
         Carrito carrito = new Carrito(clienteId);
-        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el carrito creado
+        // Guarda el carrito en la base de datos utilizando el repositorio y devuelve el
+        // carrito creado
         return carritoRepository.save(carrito);
     }
 
@@ -96,15 +100,14 @@ public class CarritoService implements VentasApi {
         Carrito guardado = carritoRepository.save(carrito);
 
         eventPublisher.publishEvent(new ProductoAgregadoAlCarritoEvent(
-            UUID.randomUUID(),
-            Instant.now(),
-            productoId.valor(),
-            carritoId.value(),
-            cantidad,
-            precioOficial.getCantidad(),
-            precioOficial.getMoneda()
-        ));
-        
+                UUID.randomUUID(),
+                Instant.now(),
+                productoId.valor(),
+                carritoId.value(),
+                cantidad,
+                precioOficial.getCantidad(),
+                precioOficial.getMoneda()));
+
         return guardado;
     }
 
@@ -124,12 +127,14 @@ public class CarritoService implements VentasApi {
     @Transactional
     public Carrito eliminarProducto(CarritoId carritoId, ProductoId productoId) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Elimina un producto del carrito utilizando el método eliminarProducto del carrito
+        // Elimina un producto del carrito utilizando el método eliminarProducto del
+        // carrito
         carrito.eliminarProducto(productoId);
         return carritoRepository.save(carrito);
     }
 
-    // Método para vaciar el carrito de compras, eliminando todos los productos del mismo
+    // Método para vaciar el carrito de compras, eliminando todos los productos del
+    // mismo
     @Transactional
     public Carrito vaciar(CarritoId carritoId) {
         Carrito carrito = obtenerCarrito(carritoId);
@@ -150,7 +155,8 @@ public class CarritoService implements VentasApi {
     @Transactional
     public Carrito completarCheckout(CarritoId carritoId) {
         Carrito carrito = obtenerCarrito(carritoId);
-        // Completa el proceso de checkout del carrito utilizando el método completarCheckout del carrito
+        // Completa el proceso de checkout del carrito utilizando el método
+        // completarCheckout del carrito
         // lo que cambia su estado a "completado"
         carrito.completarCheckout();
         return carritoRepository.save(carrito);
@@ -170,18 +176,16 @@ public class CarritoService implements VentasApi {
     /* Mapea un carrito a su representación resumida */
     private CarritoResumen mapearCarritoResumen(Carrito carrito) {
         return new CarritoResumen(
-            carrito.getId().value(),
-            carrito.getClienteId(), 
-            carrito.getEstado().name(),
-            carrito.getItems().stream()
-                .map(item -> new CarritoResumen.ItemCarritoResumen(
-                    item.getProductoId(), 
-                    item.getNombreProducto(),
-                    item.getSku(),
-                    item.getCantidad(),
-                    item.getPrecioUnitario() 
-                ))
-                .toList()
-        );
+                carrito.getId().value(),
+                carrito.getClienteId(),
+                carrito.getEstado().name(),
+                carrito.getItems().stream()
+                        .map(item -> new CarritoResumen.ItemCarritoResumen(
+                                item.getProductoId(),
+                                item.getNombreProducto(),
+                                item.getSku(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario()))
+                        .toList());
     }
 }
