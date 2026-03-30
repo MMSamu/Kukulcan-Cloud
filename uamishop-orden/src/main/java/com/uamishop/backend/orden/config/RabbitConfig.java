@@ -1,6 +1,9 @@
-package com.uamishop.ventas.config;
+package com.uamishop.backend.orden.config;
 
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -11,15 +14,11 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 
     public static final String EVENTS_EXCHANGE = "uamishop.events";
-    
     public static final String QUEUE_CATALOGO_PRODUCTO_COMPRADO = "catalogo.producto-comprado";
     public static final String QUEUE_CATALOGO_PRODUCTO_AGREGADO = "catalogo.producto-agregado-carrito";
     public static final String RK_PRODUCTO_COMPRADO = "producto.comprado";
     public static final String RK_PRODUCTO_AGREGADO = "producto.agregado-carrito";
-    public static final String RK_PRODUCTO_ACTIVADO = "producto.activado";
-
     public static final String RK_ORDEN_CREADA = "orden.creada";
-    public static final String Q_ORDEN_CREADA_VENTAS = "ventas.orden-creada";
 
     @Bean
     public TopicExchange eventsExchange() {
@@ -38,34 +37,16 @@ public class RabbitConfig {
 
     @Bean
     public Binding catalogoProductoCompradoBinding(Queue catalogoProductoCompradoQueue, TopicExchange eventsExchange) {
-        return BindingBuilder.bind(catalogoProductoCompradoQueue).to(eventsExchange).with(RK_PRODUCTO_COMPRADO);
+        return BindingBuilder.bind(catalogoProductoCompradoQueue)
+                .to(eventsExchange)
+                .with(RK_PRODUCTO_COMPRADO);
     }
 
     @Bean
     public Binding catalogoProductoAgregadoBinding(Queue catalogoProductoAgregadoQueue, TopicExchange eventsExchange) {
-        return BindingBuilder.bind(catalogoProductoAgregadoQueue).to(eventsExchange).with(RK_PRODUCTO_AGREGADO);
-    }
-
-    @Bean
-    public Queue productQueue() {
-        return new Queue("ventas.producto.activado", true);
-    }
-
-    @Bean
-    public Binding productActivadoBinding(Queue productQueue, TopicExchange eventsExchange) {
-        return BindingBuilder.bind(productQueue)
+        return BindingBuilder.bind(catalogoProductoAgregadoQueue)
                 .to(eventsExchange)
-                .with(RK_PRODUCTO_ACTIVADO);
-    }
-
-    @Bean
-    public Queue ordenCreadaVentasQueue() {
-        return new Queue(Q_ORDEN_CREADA_VENTAS, true);
-    }
-
-    @Bean
-    public Binding ordenCreadaVentasBinding(Queue ordenCreadaVentasQueue, TopicExchange eventsExchange) {
-        return BindingBuilder.bind(ordenCreadaVentasQueue).to(eventsExchange).with(RK_ORDEN_CREADA);
+                .with(RK_PRODUCTO_AGREGADO);
     }
 
     @Bean
@@ -74,10 +55,10 @@ public class RabbitConfig {
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter messageConverter) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+            Jackson2JsonMessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
         return template;
     }
-
 }

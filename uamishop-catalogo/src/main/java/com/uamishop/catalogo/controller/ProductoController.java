@@ -48,10 +48,14 @@ public class ProductoController {
                         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
         })
         @PostMapping
-        public ResponseEntity<ProductoResponse> crear(
-                        @Valid @RequestBody ProductoRequest request) {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(productoService.crear(request));
+        public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoRequest request) {
+                // 1. Creamos el producto
+                ProductoResponse response = productoService.crear(request);
+                
+                // 2. Lo activamos inmediatamente
+                productoService.activar(response.id());
+                
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
 
         // =====================================================

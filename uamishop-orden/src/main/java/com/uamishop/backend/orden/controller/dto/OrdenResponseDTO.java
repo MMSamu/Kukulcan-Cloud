@@ -1,8 +1,7 @@
 package com.uamishop.backend.orden.controller.dto;
 
-import com.uamishop.backend.orden.api.OrdenResumen;
-import java.util.UUID;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record OrdenResponseDTO(
         UUID id,
@@ -14,7 +13,6 @@ public record OrdenResponseDTO(
         LocalDateTime fechaCreacion,
         LocalDateTime fechaActualizacion) {
 
-    /** Construye el DTO de respuesta desde el OrdenResumen público del módulo. */
     public static OrdenResponseDTO fromResumen(OrdenResumen resumen) {
         return new OrdenResponseDTO(
                 resumen.ordenId(),

@@ -58,6 +58,5 @@ public record ProductoRequest(
          */
         @NotNull(message = "LA categoria es obligatoria")
         UUID categoriaId
-
 ) {}
 

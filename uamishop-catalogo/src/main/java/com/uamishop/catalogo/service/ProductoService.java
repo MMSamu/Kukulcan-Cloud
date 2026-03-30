@@ -10,6 +10,8 @@ import com.uamishop.catalogo.controller.dto.ProductoRequest;
 import com.uamishop.catalogo.controller.dto.ProductoResponse;
 import com.uamishop.catalogo.domain.Producto;
 import com.uamishop.catalogo.domain.Categoria;
+
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@org.springframework.transaction.annotation.Transactional
 public class ProductoService {
 
         private final ProductoRepository productoRepository;
@@ -89,28 +92,36 @@ public class ProductoService {
                                                 "El precio del producto debe ser mayor a cero");
                         }
 
-                        producto.cambiarPrecio(
-                                        Money.pesos(request.precio().doubleValue()));
+                        producto.cambiarPrecio(Money.pesos(request.precio().doubleValue()));
+                }
+                if (request.categoriaId() != null) {
+                        CategoriaId nuevaId = new CategoriaId(request.categoriaId());
+
+                        // Verificamos que exista la categoría antes de asignarla
+                        categoriaRepository.findById(nuevaId)
+                                .orElseThrow(() -> new BusinessRuleException("CATEGORIA_NOT_FOUND", "La nueva categoría no existe"));
+                        
+                        // Aquí es donde se usa el método que agregamos
+                        producto.cambiarCategoria(nuevaId);
                 }
 
-                productoRepository.save(producto);
-
-                return toResponse(producto);
-        }
+                Producto guardado = productoRepository.save(producto);
+                return toResponse(guardado);
+    }
 
         // =====================================================
         // ACTIVAR PRODUCTO
         // =====================================================
 
         public void activar(UUID id) {
-
-                Producto producto = productoRepository.findById(
-                                new ProductoId(id)).orElseThrow(
-                                                () -> new BusinessRuleException(
-                                                                "PRODUCTO_NO_ENCONTRADO",
-                                                                "El producto no existe"));
-
+                // Buscamos el producto usando el Value Object ProductoId
+                Producto producto = productoRepository.findById(new ProductoId(id))
+                        .orElseThrow(() -> new EntityNotFoundException("No se encontró el producto con ID: " + id));
+                
+                // Ahora esto ya no lanzará la excepción de "falta imagen"
                 producto.activar();
+                
+                // Guardamos los cambios (esto disparará el evento para que Ventas se entere)
                 productoRepository.save(producto);
         }
 

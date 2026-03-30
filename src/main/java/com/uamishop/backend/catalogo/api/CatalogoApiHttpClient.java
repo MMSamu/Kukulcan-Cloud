@@ -27,7 +27,7 @@ public class CatalogoApiHttpClient implements CatalogoApi {
     @Override
     public ProductoResumen obtenerProducto(UUID productoId) {
         // CORRECCIÓN: Usamos /api/productos/ sin el v1
-        String url = catalogoBaseUrl + "/api/productos/" + productoId;
+        String url = catalogoBaseUrl + "/api/v1/productos/" + productoId;
         try {
             ResponseEntity<ProductoResponse> response = restTemplate.getForEntity(url, ProductoResponse.class);
 
@@ -89,10 +89,10 @@ public class CatalogoApiHttpClient implements CatalogoApi {
 
     // DTO corregido para coincidir con el JSON real del microservicio Catálogo
     private record ProductoResponse(
-            UUID id, 
-            String nombre,
-            String descripcion,
-            double precio,
-            boolean activo) {
+        UUID id, 
+        String nombre,
+        String descripcion,
+        java.math.BigDecimal precio, 
+        boolean activo) {
     }
 }

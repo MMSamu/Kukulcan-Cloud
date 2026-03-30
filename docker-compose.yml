@@ -2,7 +2,7 @@ name: uamishop-app
 
 services:
   mysql:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: uamishop-mysql
     environment:
       MYSQL_DATABASE: uamishop
@@ -13,6 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      # IMPORTANTE: Este SQL debe crear uamishop_catalogo, uamishop_ventas y uamishop_orden
       - ./docker/init-catalogo-db.sql:/docker-entrypoint-initdb.d/init-catalogo-db.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
@@ -36,28 +37,6 @@ services:
       start_period: 15s
     restart: unless-stopped
 
-  uamishop:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uamishop:latest
-    container_name: uamishop
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: mysql
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-      SPRING_DATASOURCE_USERNAME: uamishop
-      SPRING_DATASOURCE_PASSWORD: uamishop
-      SPRING_RABBITMQ_HOST: rabbitmq
-      CATALOGO_SERVICE_URL: "http://uamishop-catalogo:8081"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    restart: unless-stopped
-
   uamishop-catalogo:
     build:
       context: ./uamishop-catalogo
@@ -67,7 +46,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop-catalogo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_catalogo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
       SPRING_DATASOURCE_USERNAME: uamishop
       SPRING_DATASOURCE_PASSWORD: uamishop
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -76,7 +55,46 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: unless-stopped
+
+  uamishop-ventas:
+    build:
+      context: ./uamishop-ventas
+      dockerfile: Dockerfile
+    image: uamishop-ventas:latest
+    container_name: uamishop-ventas
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_ventas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: uamishop
+      SPRING_DATASOURCE_PASSWORD: uamishop
+      SPRING_RABBITMQ_HOST: rabbitmq
+      CATALOGO_SERVICE_URL: "http://uamishop-catalogo:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  uamishop-orden:
+    build:
+      context: ./uamishop-orden
+      dockerfile: Dockerfile
+    image: uamishop-orden:latest
+    container_name: uamishop-orden
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/uamishop_orden?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: uamishop
+      SPRING_DATASOURCE_PASSWORD: uamishop
+      SPRING_RABBITMQ_HOST: rabbitmq
+      CATALOGO_SERVICE_URL: "http://uamishop-catalogo:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   mysql_data:

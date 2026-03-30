@@ -21,6 +21,7 @@
     <modules>
         <module>uamishop-catalogo</module>
         <module>uamishop-ventas</module>
+        <module>uamishop-orden</module>
     </modules>
 
     <properties>

@@ -1,4 +1,4 @@
-package com.uamishop.shared.domain;
+package com.uamishop.backend.shared.domain;
 
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
@@ -19,11 +19,7 @@ public class Money {
     }
 
     // Constructor privado
-    public Money(BigDecimal cantidad, String moneda) {
-        // Validación de nulidad para evitar NullPointerException
-        if (cantidad == null) {
-            throw new IllegalArgumentException("La cantidad no puede ser nula");
-        }
+    private Money(BigDecimal cantidad, String moneda) {
         // RN-VO-02: No se permiten saldos negativos
         if (cantidad.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("No se permiten cantidades negativas: " + cantidad);
@@ -31,6 +27,7 @@ public class Money {
         this.cantidad = cantidad;
         this.moneda = moneda;
     }
+
     // Fabrica estática para crear pesos
     public static Money pesos(double cantidad) {
         return new Money(BigDecimal.valueOf(cantidad), "MXN");

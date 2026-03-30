@@ -75,10 +75,9 @@ public class Categoria {
             throw new IllegalArgumentException("El nombre no puede estar vacio");
         }
 
-        // NOTA: Actualmente el método no asigna los nuevos valores.
-        // Faltaría:
-        // this.nombre = nombre;
-        // this.descripcion = descripcion;
+
+        this.nombre = nombre;
+        this.descripcion = descripcion;
     }
 
     /**

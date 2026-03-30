@@ -169,7 +169,7 @@ public class Producto {
         if (nuevoPrecio.getCantidad().doubleValue() < 0) {
             throw new IllegalArgumentException("El precio no puede ser negativo");
         }
-
+        /* 
         double incremento = nuevoPrecio.getCantidad()
                 .subtract(precio.getCantidad())
                 .divide(precio.getCantidad())
@@ -178,7 +178,7 @@ public class Producto {
         if (incremento > 0.5) {
             throw new IllegalArgumentException("El precio no puede aumentar más del 50%");
         }
-
+        */
         this.precio = nuevoPrecio;
     }
 
@@ -217,10 +217,10 @@ public class Producto {
      * RN-CAT-10: Debe tener precio válido.
      */
     public void activar() {
-
+        /* 
         if (imagenes.isEmpty()) {
             throw new IllegalStateException("El producto debe tener al menos una imagen");
-        }
+        }*/
 
         if (precio.getCantidad().doubleValue() <= 0) {
             throw new IllegalStateException("El producto debe tener un precio válido");
@@ -250,6 +250,17 @@ public class Producto {
         return List.copyOf(imagenes);
     }
 
+    /**
+     * Cambia la categoría del producto.
+     */
+    public void cambiarCategoria(CategoriaId nuevaCategoriaId) {
+        if (nuevaCategoriaId == null) {
+            throw new IllegalArgumentException("La categoría no puede ser nula");
+        }
+        
+        // Asignamos la nueva categoría al atributo interno
+        this.categoriaId = nuevaCategoriaId;
+    }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
 }
 
