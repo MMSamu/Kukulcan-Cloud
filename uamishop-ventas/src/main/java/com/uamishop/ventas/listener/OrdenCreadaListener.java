@@ -1,4 +1,4 @@
-package com.uamishop.ventas.listener;
+/*package com.uamishop.ventas.listener;
 
 import com.uamishop.ventas.config.RabbitConfig;
 import com.uamishop.shared.event.OrdenCreadaEvent;
@@ -23,4 +23,4 @@ public class OrdenCreadaListener {
     public void onOrdenCreada(OrdenCreadaEvent event) {
         carritoService.completarCheckout(new CarritoId(event.carritoId()));
     }
-}
+}*/

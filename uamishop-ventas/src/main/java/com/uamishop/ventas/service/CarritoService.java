@@ -3,8 +3,10 @@ package com.uamishop.ventas.service;
 import com.uamishop.shared.domain.ClienteId;
 import com.uamishop.shared.domain.Money;
 import com.uamishop.shared.domain.ProductoId;
+import com.uamishop.shared.event.CarritoFinalizadoEvent;
 import com.uamishop.shared.exception.DomainException;
 import com.uamishop.ventas.api.CarritoResumen;
+import com.uamishop.ventas.config.RabbitConfig;
 import com.uamishop.ventas.domain.Carrito;
 import com.uamishop.ventas.domain.CarritoId;
 import com.uamishop.catalogo.api.CatalogoApi;
@@ -13,7 +15,9 @@ import com.uamishop.ventas.repository.CarritoJpaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -21,14 +25,14 @@ public class CarritoService {
 
     private final CarritoJpaRepository carritoRepository;
     private final CatalogoApi catalogoApi;
-    private final ApplicationEventPublisher eventPublisher;
+    private final RabbitTemplate rabbitTemplate; // <--- AGREGAR
 
     public CarritoService(CarritoJpaRepository carritoRepository, 
                           CatalogoApi catalogoApi, 
-                          ApplicationEventPublisher eventPublisher) {
+                          RabbitTemplate rabbitTemplate) { // <--- AGREGAR
         this.carritoRepository = carritoRepository;
         this.catalogoApi = catalogoApi;
-        this.eventPublisher = eventPublisher;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     // --- MÉTODOS PÚBLICOS ---
@@ -116,7 +120,34 @@ public class CarritoService {
     public Carrito completarCheckout(CarritoId carritoId) {
         Carrito carrito = obtenerCarrito(carritoId);
         carrito.completarCheckout();
-        return carritoRepository.save(carrito);
+        
+        Carrito carritoGuardado = carritoRepository.save(carrito);
+
+        try {
+            // Creamos el evento incluyendo el TOTAL real del carrito
+            CarritoFinalizadoEvent evento = new CarritoFinalizadoEvent(
+                carrito.getClienteId().getValor(),
+                "Av. San Rafael Atlixco", // O los datos que tengas en tu form de checkout
+                "186", 
+                "Iztapalapa", 
+                "CDMX", 
+                "09340", 
+                "555-1234",
+                carrito.getTotal().getCantidad() // <--- EL MONTO REAL AQUÍ
+            );
+
+            rabbitTemplate.convertAndSend(
+                RabbitConfig.EVENTS_EXCHANGE, 
+                "uamishop.ventas.carrito.finalizado", 
+                evento
+            );
+            
+            System.out.println("🚀 Evento de checkout enviado a Órdenes con total: $" + carrito.getTotal().getCantidad());
+        } catch (Exception e) {
+            System.err.println("❌ Falló el envío del evento: " + e.getMessage());
+        }
+
+        return carritoGuardado;
     }
 
     @Transactional

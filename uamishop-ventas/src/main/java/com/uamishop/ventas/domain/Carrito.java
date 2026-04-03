@@ -197,4 +197,8 @@ public class Carrito {
     public Money getDescuento() { 
         return descuento; 
     }
+
+    public Money getTotal() {
+        return calcularTotal();
+    }
 }
