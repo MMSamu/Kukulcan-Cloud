@@ -78,17 +78,18 @@ public class CarritoController {
                 content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/{id}/productos")
-    public ResponseEntity<CarritoResponseDTO> agregar(@PathVariable UUID id,
+    public ResponseEntity<?> agregar(@PathVariable UUID id,
             @Valid @RequestBody AgregarProductoRequest request) {
         
-        // Se transforman los UUIDs de la URL y el Body a sus respectivos Value Objects del dominio
-        // al conectarse con catalogo no es necesario
-        Carrito carrito = service.agregarProducto(
+        // 1. Ejecutamos la lógica (que ahora usa el API de catálogo)
+        service.agregarProducto(
                 new CarritoId(id), 
                 new ProductoId(request.productoId()), 
                 request.cantidad());
                 
-        return ResponseEntity.ok(CarritoMapper.toDTO(carrito));
+        // 2. En lugar de usar el Mapper que dispara el error de Hibernate,
+        // usamos el método que devuelve el resumen directamente.
+        return ResponseEntity.ok(service.obtenerResumen(id));
     }
 
     // Endpoint para modificar la cantidad de un producto en el carrito.

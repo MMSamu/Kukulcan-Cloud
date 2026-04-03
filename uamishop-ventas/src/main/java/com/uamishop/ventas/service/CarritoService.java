@@ -3,33 +3,31 @@ package com.uamishop.ventas.service;
 import com.uamishop.shared.domain.ClienteId;
 import com.uamishop.shared.domain.Money;
 import com.uamishop.shared.domain.ProductoId;
-import com.uamishop.shared.event.ProductoAgregadoAlCarritoEvent;
 import com.uamishop.shared.exception.DomainException;
 import com.uamishop.ventas.api.CarritoResumen;
 import com.uamishop.ventas.domain.Carrito;
 import com.uamishop.ventas.domain.CarritoId;
-import com.uamishop.ventas.domain.Producto; 
+import com.uamishop.catalogo.api.CatalogoApi;
+import com.uamishop.catalogo.api.ProductoResumen;
 import com.uamishop.ventas.repository.CarritoJpaRepository;
-import com.uamishop.ventas.repository.ProductoJpaRepository; 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Service
 public class CarritoService {
 
     private final CarritoJpaRepository carritoRepository;
-    private final ProductoJpaRepository productoRepository; 
+    private final CatalogoApi catalogoApi;
     private final ApplicationEventPublisher eventPublisher;
 
     public CarritoService(CarritoJpaRepository carritoRepository, 
-                          ProductoJpaRepository productoRepository, 
+                          CatalogoApi catalogoApi, 
                           ApplicationEventPublisher eventPublisher) {
         this.carritoRepository = carritoRepository;
-        this.productoRepository = productoRepository;
+        this.catalogoApi = catalogoApi;
         this.eventPublisher = eventPublisher;
     }
 
@@ -66,36 +64,24 @@ public class CarritoService {
      */
     @Transactional
     public Carrito agregarProducto(CarritoId carritoId, ProductoId productoId, int cantidad) {
+        ProductoResumen productoExterno = catalogoApi.obtenerProducto(productoId.valor());
         
-        // 1. Buscamos el producto en nuestra DB local de Ventas
-        // Si no existe, significa que RabbitMQ aún no nos avisa del Catálogo
-        Producto productoLocal = productoRepository.findById(productoId.valor())
-                .orElseThrow(() -> new DomainException("Error: El producto no ha sido sincronizado desde el Catálogo todavía."));
+        if (productoExterno == null) {
+            throw new DomainException("El producto no existe en el catálogo");
+        }
 
-        // 2. Extraemos el precio real que llegó desde el Listener
-        Money precioReal = productoLocal.getPrecio(); 
-
-        // 3. Buscamos el carrito
         Carrito carrito = obtenerCarrito(carritoId);
         
-        // 4. Agregamos el producto con su precio oficial
-        carrito.agregarProducto(productoId, cantidad, precioReal);
+        // AHORA SÍ LE PASAMOS EL NOMBRE Y EL SKU QUE VIENEN DEL CATÁLOGO
+        carrito.agregarProducto(
+            productoId, 
+            cantidad, 
+            productoExterno.precio(), 
+            productoExterno.nombre(), 
+            "S/N" // O productoExterno.sku() si existe
+        );
 
-        // 5. Guardamos cambios
-        Carrito guardado = carritoRepository.save(carrito);
-
-        // 6. Notificamos al resto del sistema
-        eventPublisher.publishEvent(new ProductoAgregadoAlCarritoEvent(
-            UUID.randomUUID(),
-            Instant.now(),
-            productoId.valor(),
-            carritoId.value(),
-            cantidad,
-            precioReal.getCantidad(),
-            precioReal.getMoneda()
-        ));
-        
-        return guardado;
+        return carritoRepository.save(carrito);
     }
 
     @Transactional

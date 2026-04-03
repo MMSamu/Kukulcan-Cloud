@@ -24,13 +24,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.uamishop</groupId>
-            <artifactId>uamishop-catalogo</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <classifier>exec</classifier> 
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

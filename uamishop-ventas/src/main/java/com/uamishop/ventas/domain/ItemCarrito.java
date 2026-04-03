@@ -39,12 +39,15 @@ public class ItemCarrito {
     }
 
     // Constructor para crear un nuevo item en el carrito
-    public ItemCarrito(ProductoId productoId, int cantidad, Money precioUnitario) {
+    public ItemCarrito(ProductoId productoId, int cantidad, Money precioUnitario, String nombre, String sku) {
         this.id = UUID.randomUUID();
         this.productoId = productoId;
         // Validamos usando Record, pero guardamos el valor primitivo
         this.cantidad = new Cantidad(cantidad).valor();
         this.precioUnitario = precioUnitario;
+        // AQUÍ GUARDAMOS LOS NUEVOS DATOS:
+        this.nombreProducto = nombre;
+        this.sku = sku;
     }
 
     // Aumenta la cantidad sumando a la existente (ej: agregar más del mismo producto)

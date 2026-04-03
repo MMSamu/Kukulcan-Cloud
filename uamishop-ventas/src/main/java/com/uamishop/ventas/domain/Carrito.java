@@ -60,24 +60,22 @@ public class Carrito {
 
     // Metodos de negocio
     // Agregar producto al carrito 
-    public void agregarProducto(ProductoId productoId, int cantidadInt, Money precio) {
-        validarEstadoActivo();
+    public void agregarProducto(ProductoId productoId, int cantidadInt, Money precio, String nombre, String sku) {
+    validarEstadoActivo();
         Cantidad cantidad = new Cantidad(cantidadInt);
 
-        // Verifica si el producto ya existe en el carrito
         Optional<ItemCarrito> existente = items.stream()
                 .filter(i -> i.getProductoId().equals(productoId))
                 .findFirst();
 
-        // Si ya existe, aumenta la cantidad. Si no, agrega un nuevo item al carrito
         if (existente.isPresent()) {
             existente.get().aumentarCantidad(cantidad);
         } else {
             if (items.size() >= 20) throw new DomainException("Carrito lleno");
-            items.add(new ItemCarrito(productoId, cantidadInt, precio));
+            // PASA LOS NUEVOS PARÁMETROS AQUÍ:
+            items.add(new ItemCarrito(productoId, cantidadInt, precio, nombre, sku));
         }
     }
-
     // Modificar cantidad de un producto en el carrito
     public void modificarCantidad(ProductoId productoId, int nuevaCantidadInt) {
         validarEstadoActivo();
