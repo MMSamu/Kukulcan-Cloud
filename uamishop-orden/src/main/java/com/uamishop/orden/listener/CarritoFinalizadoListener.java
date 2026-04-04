@@ -17,18 +17,22 @@ public class CarritoFinalizadoListener {
     }
 
 @RabbitListener(queues = RabbitConfig.QUEUE_CARRITO_FINALIZADO)
-public void handleCarritoFinalizado(CarritoFinalizadoEvent event) {
-    // Si el evento trae 'calle' y 'numero' por separado, júntalos:
+public void handlesCarritoFinalizado(CarritoFinalizadoEvent event) {
+    // 1. Construir la calle
     String calleCompleta = event.calle() + " " + event.numero();
 
+    // 2. Crear el objeto de dominio DireccionEnvio
     DireccionEnvio direccion = DireccionEnvio.crear(
-            calleCompleta,      // calle
-            event.ciudad(),     // ciudad
-            event.estado(),     // estado
-            event.codigoPostal(),// codigoPostal
-            event.telefono()    // telefonoContacto (debe ser de 10 dígitos)
+            calleCompleta,
+            event.ciudad(),
+            event.estado(),
+            event.codigoPostal(),
+            event.telefono()
     );
 
+    // 3. Llamar al service. 
+    // Pasamos NULL en el primer parámetro porque CarritoFinalizadoEvent no tiene ordenId.
+    // El Service se encargará de generar uno nuevo.
     ordenService.registrarOActualizarMonto(
             null, 
             event.clienteId(), 

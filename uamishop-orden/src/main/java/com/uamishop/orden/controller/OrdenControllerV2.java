@@ -3,12 +3,10 @@ package com.uamishop.orden.controller;
 import com.uamishop.orden.service.OrdenService;
 import com.uamishop.orden.controller.dto.*;
 import com.uamishop.orden.domain.DireccionEnvio;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,21 +27,28 @@ public class OrdenControllerV2 {
         this.ordenService = ordenService;
     }
 
-    // --- 1. CREAR UNA ORDEN (Vacía) ---
-    @Operation(summary = "Crear una orden", description = "Crea una orden inicial para un cliente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Orden creada exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "500", description = "Error interno")
-    })
+    // --- 1. CREAR UNA ORDEN (Con dirección inicial para evitar NullPointer) ---
+    @Operation(summary = "Crear una orden", description = "Crea una orden inicial. Se recomienda enviar dirección para flujo completo.")
     @PostMapping
     public ResponseEntity<OrdenResponseDTO> crear(@Valid @RequestBody OrdenRequest request) {
-        OrdenResumen resumen = ordenService.crear(request.clienteId(), null, BigDecimal.ZERO);
+        // Extraemos la dirección del request si existe, si no, el Service deberá manejarlo
+        DireccionEnvio direccion = null;
+        if (request.direccionEnvio() != null) {
+            direccion = DireccionEnvio.crear(
+                request.direccionEnvio().calle() + " " + request.direccionEnvio().numeroExterior(),
+                request.direccionEnvio().ciudad(), 
+                request.direccionEnvio().estado(), 
+                request.direccionEnvio().codigoPostal(), 
+                request.direccionEnvio().telefonoContacto());
+        }
+
+        // Usamos el método crear que acepta items (si los tienes en el DTO) o una lista vacía
+        OrdenResumen resumen = ordenService.crear(request.clienteId(), direccion, BigDecimal.ZERO, request.items());
         return ResponseEntity.status(HttpStatus.CREATED).body(OrdenResponseDTO.fromResumen(resumen));
     }
 
-    // --- 2. CREAR ORDEN DESDE CARRITO ---
-    @Operation(summary = "Crear orden desde carrito", description = "Crea la orden con monto $0 para que Swagger la rastree")
+    // --- 2. CREAR O ACTUALIZAR DESDE CARRITO ---
+    @Operation(summary = "Crear orden desde carrito", description = "Vincula el ID de orden del carrito con los datos de envío")
     @PostMapping("/{id}/orden")
     public ResponseEntity<OrdenResponseDTO> crearDesdeCarrito(
             @PathVariable UUID id, 
@@ -56,19 +61,17 @@ public class OrdenControllerV2 {
                 request.codigoPostal(), 
                 request.telefonoContacto());
 
+        // Este método busca la orden y le inyecta la dirección y el monto (que llegará por Rabbit después)
         OrdenResumen resumen = ordenService.registrarOActualizarMonto(id, request.clienteId(), direccion, null);
         return ResponseEntity.status(HttpStatus.CREATED).body(OrdenResponseDTO.fromResumen(resumen));
     }
 
-    // --- 3. OBTENER ORDEN POR ID ---
     @Operation(summary = "Obtener orden por ID")
     @GetMapping("/{id}")
     public ResponseEntity<OrdenResponseDTO> obtenerPorId(@PathVariable UUID id) {
-        OrdenResumen resumen = ordenService.obtenerOrden(id);
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.obtenerOrden(id)));
     }
 
-    // --- 4. LISTAR TODAS LAS ÓRDENES ---
     @Operation(summary = "Listar todas las órdenes")
     @GetMapping
     public ResponseEntity<List<OrdenResponseDTO>> listarTodas() {
@@ -78,56 +81,43 @@ public class OrdenControllerV2 {
         return ResponseEntity.ok(response);
     }
 
-    // --- 5. CONFIRMAR UNA ORDEN ---
-    @Operation(summary = "Confirmar una orden")
+    @Operation(summary = "Confirmar una orden", description = "Cambia el estado de PENDIENTE a CONFIRMADA")
     @PostMapping("/{id}/confirmar")
     public ResponseEntity<OrdenResponseDTO> confirmar(@PathVariable UUID id) {
-        OrdenResumen resumen = ordenService.confirmar(id);
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.confirmar(id)));
     }
 
-    // --- 6. PROCESAR PAGO ---
-    @Operation(summary = "Procesar pago")
+    @Operation(summary = "Procesar pago", description = "Cambia el estado de CONFIRMADA a PREPARACION")
     @PostMapping("/{id}/procesar-pago")
     public ResponseEntity<OrdenResponseDTO> procesarPago(
             @PathVariable UUID id, 
             @Valid @RequestBody PagoRequest request) {
-        OrdenResumen resumen = ordenService.procesarPago(id, request.referenciaPago());
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.procesarPago(id, request.referenciaPago())));
     }
 
-    // --- 7. MARCAR EN PROCESO ---
-    @Operation(summary = "Marcar en proceso")
+    @Operation(summary = "Marcar en proceso", description = "Cambia el estado a PREPARACION (si no se ha pagado)")
     @PostMapping("/{id}/marcar-en-proceso")
     public ResponseEntity<OrdenResponseDTO> marcarEnProceso(@PathVariable UUID id) {
-        OrdenResumen resumen = ordenService.marcarEnProceso(id);
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.marcarEnProceso(id)));
     }
 
-    // --- 8. MARCAR COMO ENVIADO ---
-    @Operation(summary = "Marcar como enviada")
+    @Operation(summary = "Marcar como enviada", description = "Genera guía y cambia a ENVIADA. Requiere dirección previa.")
     @PostMapping("/{id}/marcar-enviada")
     public ResponseEntity<OrdenResponseDTO> marcarEnviada(@PathVariable UUID id) {
-        // Ahora solo requiere el ID. El número de guía se genera en el Servicio.
-        OrdenResumen resumen = ordenService.marcarEnviada(id);
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.marcarEnviada(id)));
     }
 
-    // --- 9. MARCAR COMO ENTREGADO ---
-    @Operation(summary = "Marcar como entregada")
+    @Operation(summary = "Marcar como entregada", description = "Cambia el estado de ENVIADA a ENTREGADA")
     @PostMapping("/{id}/marcar-entregada")
     public ResponseEntity<OrdenResponseDTO> marcarEntregada(@PathVariable UUID id) {
-        OrdenResumen resumen = ordenService.marcarEntregada(id);
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.marcarEntregada(id)));
     }
 
-    // --- 10. CANCELAR UNA ORDEN ---
     @Operation(summary = "Cancelar una orden")
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<OrdenResponseDTO> cancelar(
             @PathVariable UUID id, 
             @Valid @RequestBody CancelacionRequest request) {
-        OrdenResumen resumen = ordenService.cancelar(id, request.motivo());
-        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(resumen));
+        return ResponseEntity.ok(OrdenResponseDTO.fromResumen(ordenService.cancelar(id, request.motivo())));
     }
 }
