@@ -33,22 +33,15 @@ public class OrdenControllerV2 {
     }
 
     @Operation(summary = "Crear orden desde carrito")
-    @PostMapping("/{id}/orden")
-    public ResponseEntity<OrdenResponseDTO> crearDesdeCarrito(
-            @PathVariable UUID id, 
-            @Valid @RequestBody OrdenRequest request) { 
+@PostMapping("/{id}/orden")
+    public ResponseEntity<OrdenResponseDTO> crearDesdeCarrito(@PathVariable UUID id) { 
+        // 1. Buscamos la orden que el Listener ya debió insertar con ese ID
+        // 2. Si no existe, el service lanzará la excepción "Orden no encontrada"
+        OrdenResumen resumen = ordenService.obtenerOrden(id);
         
-        DireccionEnvio direccion = mapDireccion(request.direccionEnvio());
+        // Opcional: Podrías llamar a un método de confirmación si lo necesitas
+        // resumen = ordenService.confirmar(id);
 
-        // Llamada con los 5 parámetros
-        OrdenResumen resumen = ordenService.registrarOActualizarMonto(
-            id, 
-            request.clienteId(), 
-            direccion, 
-            null, 
-            request.items() 
-        );
-        
         return ResponseEntity.status(HttpStatus.CREATED).body(OrdenResponseDTO.fromResumen(resumen));
     }
 

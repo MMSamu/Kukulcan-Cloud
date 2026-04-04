@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record CarritoFinalizadoEvent(
+    UUID carritoId, // <--- INDISPENSABLE
     UUID clienteId,
     String calle,
     String numero,

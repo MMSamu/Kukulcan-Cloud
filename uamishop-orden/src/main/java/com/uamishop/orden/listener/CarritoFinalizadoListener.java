@@ -21,36 +21,26 @@ public class CarritoFinalizadoListener {
     }
 
     @RabbitListener(queues = RabbitConfig.CARRITO_FINALIZADO_QUEUE)
-    public void manejarCarritoFinalizado(CarritoFinalizadoEvent evento) {
-        // Nota: El record no tiene carritoId, usaremos clienteId o un log genérico
-        System.out.println("📩 Evento recibido de RabbitMQ para cliente: " + evento.clienteId());
+public void manejarCarritoFinalizado(CarritoFinalizadoEvent evento) {
+    System.out.println("📩 Evento recibido. Carrito ID: " + evento.carritoId());
 
-        // Reconstruimos la dirección desde los campos del evento
-        DireccionEnvio direccion = null;
-        if (evento.calle() != null) {
-            direccion = DireccionEnvio.crear(
-                evento.calle() + " " + evento.numero(),
-                evento.ciudad(),
-                evento.estado(),
-                evento.codigoPostal(),
-                evento.telefono()
-            );
-        }
+    DireccionEnvio direccion = DireccionEnvio.crear(
+        evento.calle() + " " + evento.numero(),
+        evento.ciudad(),
+        evento.estado(),
+        evento.codigoPostal(),
+        evento.telefono()
+    );
 
-        // Como el record que pasaste NO tiene la lista de items, 
-        // pasamos una lista vacía para evitar errores de compilación.
-        List<ItemOrdenRequest> itemsVacios = Collections.emptyList();
-
-        // Llamamos al service. 
-        // Usamos el 'evento.total()' para que el service no tenga que calcular nada (ya que no hay items)
-        ordenService.registrarOActualizarMonto(
-                null,           // No tenemos ID de orden en el evento
-                evento.clienteId(), 
-                direccion, 
-                evento.total(), // Usamos el total que ya viene en el mensaje
-                itemsVacios     // Lista vacía
-        );
-        
-        System.out.println("✅ Orden pre-registrada exitosamente desde el evento con monto: " + evento.total());
-    }
+    // PASAMOS EL carritoId para que la orden se guarde con ese ID
+    ordenService.registrarOActualizarMonto(
+            evento.carritoId(), // <--- AHORA SÍ HAY ID
+            evento.clienteId(), 
+            direccion, 
+            evento.total(),     // Traemos el total de Ventas
+            Collections.emptyList() 
+    );
+    
+    System.out.println("✅ Orden pre-registrada con ID de carrito.");
+}
 }

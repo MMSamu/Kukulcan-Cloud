@@ -46,8 +46,14 @@ public class OrdenService {
             orden = new Orden(clienteId, direccionEnvio);
         } else {
             orden = ordenRepository.findById(ordenId)
+                    .map(existente -> {
+                        if (direccionEnvio != null) {
+                            setPrivateField(existente, "direccionEnvio", direccionEnvio);
+                        }
+                        return existente;
+                    })
                     .orElseGet(() -> {
-                        System.out.println("⚠️ Creando orden desde cero con ID de carrito: " + ordenId);
+                        System.out.println("⚠️ Creando orden nueva con ID de carrito: " + ordenId);
                         Orden nueva = crearOrdenConIdEspecifico(ordenId, clienteId, direccionEnvio);
                         if (items != null && !items.isEmpty()) {
                             cargarItemsEnOrden(nueva, items);
@@ -56,13 +62,21 @@ public class OrdenService {
                     });
         }
 
-        if (monto == null) {
-            BigDecimal totalCalculado = calcularTotalDesdeCatalogoUsandoReflexion(orden);
-            orden.setSubtotal(totalCalculado);
-            orden.setTotal(totalCalculado);
+        // Manejo de montos mediante Reflexión para la clase Money
+        if (monto != null) {
+            Money moneyMonto = Money.pesos(monto.doubleValue());
+            setPrivateField(orden, "total", moneyMonto);
+            setPrivateField(orden, "subtotal", moneyMonto);
         } else {
-            orden.setTotal(monto);
-            orden.setSubtotal(monto);
+            Money totalActual = (Money) getPrivateField(orden, "total");
+            BigDecimal valorTotal = (totalActual != null) ? totalActual.getCantidad() : BigDecimal.ZERO;
+
+            if (valorTotal == null || valorTotal.compareTo(BigDecimal.ZERO) == 0) {
+                BigDecimal totalCalculado = calcularTotalDesdeCatalogoUsandoReflexion(orden);
+                Money moneyCalculado = Money.pesos(totalCalculado.doubleValue());
+                setPrivateField(orden, "subtotal", moneyCalculado);
+                setPrivateField(orden, "total", moneyCalculado);
+            }
         }
 
         Orden guardada = ordenRepository.save(orden);
@@ -70,50 +84,13 @@ public class OrdenService {
         return OrdenResumen.desde(guardada);
     }
 
-    private void cargarItemsEnOrden(Orden orden, List<ItemOrdenRequest> itemsRequest) {
-        try {
-            Field field = Orden.class.getDeclaredField("items");
-            field.setAccessible(true);
-            List<ItemOrden> listaItems = (List<ItemOrden>) field.get(orden);
-            
-            for (ItemOrdenRequest req : itemsRequest) {
-                // Usamos el método static crear de tu entidad ItemOrden
-                // Ponemos un precio temporal de 1 peso que luego será sobrescrito por el cálculo del catálogo
-                ItemOrden nuevoItem = ItemOrden.crear(
-                    req.productoId(), 
-                    "Pendiente", 
-                    "SKU", 
-                    req.cantidad(), 
-                    Money.pesos(1.0)
-                );
-                listaItems.add(nuevoItem);
-            }
-        } catch (Exception e) {
-            System.out.println("❌ Error cargando ítems vía reflexión: " + e.getMessage());
-        }
-    }
-
-    private Orden crearOrdenConIdEspecifico(UUID ordenId, UUID clienteId, DireccionEnvio direccionEnvio) {
-        Orden nuevaOrden = new Orden(clienteId, direccionEnvio);
-        try {
-            Field idField = Orden.class.getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(nuevaOrden, ordenId);
-        } catch (Exception e) {
-            System.out.println("❌ Error al setear ID manual: " + e.getMessage());
-        }
-        return nuevaOrden;
-    }
-
     @Transactional
     public OrdenResumen crear(UUID clienteId, DireccionEnvio direccionEnvio, List<ItemOrdenRequest> items) {
         if (items == null || items.isEmpty()) {
             throw new DomainException("No se puede crear una orden sin productos.");
         }
-
         Orden orden = new Orden(clienteId, direccionEnvio);
         BigDecimal totalCalculado = BigDecimal.ZERO;
-
         for (ItemOrdenRequest item : items) {
             ProductoResumen producto = catalogoApi.obtenerProducto(item.productoId());
             if (producto != null) {
@@ -121,9 +98,10 @@ public class OrdenService {
                 totalCalculado = totalCalculado.add(precioUnitario.multiply(BigDecimal.valueOf(item.cantidad())));
             }
         }
-
-        orden.setSubtotal(totalCalculado);
-        orden.setTotal(totalCalculado);
+        
+        Money moneyTotal = Money.pesos(totalCalculado.doubleValue());
+        setPrivateField(orden, "subtotal", moneyTotal);
+        setPrivateField(orden, "total", moneyTotal);
 
         Orden guardada = ordenRepository.save(orden);
         notificarOrdenCreada(guardada, clienteId);
@@ -200,13 +178,8 @@ public class OrdenService {
 
     private BigDecimal calcularTotalDesdeCatalogoUsandoReflexion(Orden orden) {
         try {
-            Field field = Orden.class.getDeclaredField("items");
-            field.setAccessible(true);
-            List<ItemOrden> items = (List<ItemOrden>) field.get(orden);
-
-            if (items == null || items.isEmpty()) {
-                throw new DomainException("La orden del carrito no tiene productos.");
-            }
+            List<ItemOrden> items = (List<ItemOrden>) getPrivateField(orden, "items");
+            if (items == null || items.isEmpty()) return BigDecimal.ZERO;
 
             BigDecimal total = BigDecimal.ZERO;
             for (ItemOrden item : items) {
@@ -219,6 +192,52 @@ public class OrdenService {
             return total;
         } catch (Exception e) {
             throw new RuntimeException("Error al calcular total", e);
+        }
+    }
+
+    private void cargarItemsEnOrden(Orden orden, List<ItemOrdenRequest> itemsRequest) {
+        try {
+            List<ItemOrden> listaItems = (List<ItemOrden>) getPrivateField(orden, "items");
+            for (ItemOrdenRequest req : itemsRequest) {
+                ItemOrden nuevoItem = ItemOrden.crear(
+                    req.productoId(), 
+                    "Pendiente", 
+                    "SKU", 
+                    req.cantidad(), 
+                    Money.pesos(1.0)
+                );
+                listaItems.add(nuevoItem);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error cargando ítems: " + e.getMessage());
+        }
+    }
+
+    private Orden crearOrdenConIdEspecifico(UUID ordenId, UUID clienteId, DireccionEnvio direccionEnvio) {
+        Orden nuevaOrden = new Orden(clienteId, direccionEnvio);
+        setPrivateField(nuevaOrden, "id", ordenId);
+        return nuevaOrden;
+    }
+
+    // --- MÉTODOS DE APOYO PARA REFLEXIÓN ---
+
+    private void setPrivateField(Object object, String fieldName, Object value) {
+        try {
+            Field field = Orden.class.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(object, value);
+        } catch (Exception e) {
+            System.out.println("❌ Error seteando campo " + fieldName + ": " + e.getMessage());
+        }
+    }
+
+    private Object getPrivateField(Object object, String fieldName) {
+        try {
+            Field field = Orden.class.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

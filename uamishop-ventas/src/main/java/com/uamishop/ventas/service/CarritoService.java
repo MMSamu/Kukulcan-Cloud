@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -129,17 +129,20 @@ public Carrito completarCheckout(CarritoId carritoId) {
     Carrito carritoGuardado = carritoRepository.save(carrito);
 
     try {
-        // IMPORTANTE: Asegúrate que el evento tenga estos campos exactos
+        // 1. Extraemos el monto puro de la clase Money
+        BigDecimal montoTotal = carrito.getTotal().getCantidad();
+
+        // 2. Construimos el evento con el ID del Carrito incluido
         CarritoFinalizadoEvent evento = new CarritoFinalizadoEvent(
-            carrito.getClienteId().getValor(),
+            carrito.getId().value(),   // carritoId (Importante para el paso 2)
+            carrito.getClienteId().getValor(), // clienteId
             "Av. San Rafael Atlixco", // calle
-            "186",                    // numero (este campo parece que no lo usas en DireccionEnvio, 
-                                    // podrías concatenarlo a la calle o ignorarlo)
+            "186",                    // numero
             "Iztapalapa",             // ciudad
             "CDMX",                   // estado
             "09340",                  // codigoPostal
-            "9177119297",             // telefono (10 dígitos exactos)
-            carrito.getTotal().getCantidad()
+            "9177119297",             // telefono
+            montoTotal                // total (BigDecimal)
         );
 
         rabbitTemplate.convertAndSend(
@@ -148,9 +151,9 @@ public Carrito completarCheckout(CarritoId carritoId) {
             evento
         );
         
-        System.out.println("🚀 Total de $" + carrito.getTotal().getCantidad() + " enviado a Órdenes.");
+        System.out.println("🚀 Evento enviado: Carrito " + carrito.getId().value() + " por $" + montoTotal);
     } catch (Exception e) {
-        System.err.println("❌ Error enviando evento: " + e.getMessage());
+        System.err.println("❌ Error enviando evento a RabbitMQ: " + e.getMessage());
     }
 
     return carritoGuardado;
