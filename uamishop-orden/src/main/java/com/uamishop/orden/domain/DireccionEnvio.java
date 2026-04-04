@@ -22,6 +22,7 @@ public class DireccionEnvio {
 
     private DireccionEnvio(String calle, String ciudad, String estado, String codigoPostal,
             String pais, String telefonoContacto) {
+        
         // RN-VO-04: El país debe ser "México"
         if (!"México".equals(pais)) {
             throw new IllegalArgumentException("Solo se permiten envíos a México");
@@ -32,10 +33,15 @@ public class DireccionEnvio {
             throw new IllegalArgumentException("El código postal debe ser de 5 dígitos");
         }
 
-        // RN-ORD-04: El teléfono de contacto debe ser de 10 dígitos
-        if (telefonoContacto == null || !telefonoContacto.matches("\\d{10}")) {
-            throw new IllegalArgumentException("El teléfono de contacto debe ser de 10 dígitos");
+        // --- CAMBIO: Sanitización y Validación de Teléfono ---
+        // Eliminamos cualquier caracter que no sea número (guiones, espacios, etc.)
+        String telLimpio = (telefonoContacto != null) ? telefonoContacto.replaceAll("[^0-9]", "") : "";
+
+        // RN-ORD-04: El teléfono de contacto debe ser de 10 dígitos puros
+        if (telLimpio.length() != 10) {
+            throw new IllegalArgumentException("El teléfono de contacto debe tener 10 dígitos numéricos (actual: " + telLimpio.length() + ")");
         }
+        // ------------------------------------------------------
 
         if (calle == null || calle.trim().isEmpty()) {
             throw new IllegalArgumentException("La calle no puede estar vacía");
@@ -54,9 +60,12 @@ public class DireccionEnvio {
         this.estado = estado;
         this.codigoPostal = codigoPostal;
         this.pais = pais;
-        this.telefonoContacto = telefonoContacto;
+        this.telefonoContacto = telLimpio; // Guardamos la versión limpia de 10 dígitos
     }
 
+    /**
+     * Factory method para crear una instancia válida de DireccionEnvio.
+     */
     public static DireccionEnvio crear(String calle, String ciudad, String estado,
             String codigoPostal, String telefonoContacto) {
         return new DireccionEnvio(calle, ciudad, estado, codigoPostal, "México", telefonoContacto);

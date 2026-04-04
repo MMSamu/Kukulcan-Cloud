@@ -1,11 +1,8 @@
 package com.uamishop.ventas.config;
 
-import java.util.HashMap;
-
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,14 +12,20 @@ public class RabbitConfig {
 
     public static final String EVENTS_EXCHANGE = "uamishop.events";
     
+    // Constantes para productos
     public static final String QUEUE_CATALOGO_PRODUCTO_COMPRADO = "catalogo.producto-comprado";
     public static final String QUEUE_CATALOGO_PRODUCTO_AGREGADO = "catalogo.producto-agregado-carrito";
     public static final String RK_PRODUCTO_COMPRADO = "producto.comprado";
     public static final String RK_PRODUCTO_AGREGADO = "producto.agregado-carrito";
     public static final String RK_PRODUCTO_ACTIVADO = "producto.activado";
 
+    // Constantes para Órdenes
     public static final String RK_ORDEN_CREADA = "orden.creada";
     public static final String Q_ORDEN_CREADA_VENTAS = "ventas.orden-creada";
+
+    // --- ESTA ES LA QUE TE FALTA ---
+    public static final String RK_CARRITO_FINALIZADO = "carrito.finalizado"; // <--- AGREGAR
+    // -------------------------------
 
     @Bean
     public TopicExchange eventsExchange() {
@@ -73,8 +76,7 @@ public class RabbitConfig {
 
     @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
-        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
-        return converter;
+        return new Jackson2JsonMessageConverter();
     }
 
     @Bean
@@ -83,5 +85,4 @@ public class RabbitConfig {
         template.setMessageConverter(messageConverter);
         return template;
     }
-
 }

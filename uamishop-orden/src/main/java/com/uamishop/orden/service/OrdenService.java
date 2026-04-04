@@ -33,6 +33,43 @@ public class OrdenService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
+    // --- MÉTODO PUENTE (SWAGGER + RABBITMQ) ---
+    @Transactional
+    public OrdenResumen registrarOActualizarMonto(UUID ordenId, UUID clienteId, DireccionEnvio direccionEnvio, BigDecimal monto) {
+        // Buscamos si ya existe una orden para este cliente
+        List<Orden> ordenesDelCliente = ordenRepository.findAll().stream()
+                .filter(o -> o.getClienteId().equals(clienteId))
+                .sorted((o1, o2) -> o2.getFechaCreacion().compareTo(o1.getFechaCreacion())) // La más reciente
+                .toList();
+
+        Orden orden;
+        if (!ordenesDelCliente.isEmpty()) {
+            orden = ordenesDelCliente.get(0); // Usamos la existente
+        } else {
+            orden = new Orden(clienteId, direccionEnvio); // Creamos una nueva
+        }
+
+        // Si RabbitMQ envía el monto, se lo inyectamos
+        if (monto != null) {
+            orden.setTotal(monto);
+            orden.setSubtotal(monto);
+        } else if (orden.getTotal() == null) {
+            // Si viene de Swagger y no tiene monto, iniciamos en 0
+            orden.setTotal(BigDecimal.ZERO);
+            orden.setSubtotal(BigDecimal.ZERO);
+        }
+
+        Orden guardada = ordenRepository.save(orden);
+        
+        // Notificamos solo si es nueva
+        if (ordenesDelCliente.isEmpty()) {
+            notificarOrdenCreada(guardada, clienteId);
+        }
+
+        return OrdenResumen.desde(guardada);
+    }
+    // ------------------------------------------
+
     @Transactional(readOnly = true)
     public OrdenResumen obtenerOrden(UUID ordenId) {
         return OrdenResumen.desde(buscarPorId(ordenId));
@@ -55,35 +92,17 @@ public class OrdenService {
     @Transactional
     public OrdenResumen crear(UUID clienteId, DireccionEnvio direccionEnvio, BigDecimal monto) {
         Orden orden = new Orden(clienteId, direccionEnvio);
-        
-        // Asignación de montos reales recibidos
         orden.setTotal(monto);
         orden.setSubtotal(monto);
         
         Orden guardada = ordenRepository.save(orden);
         notificarOrdenCreada(guardada, clienteId);
-
         return OrdenResumen.desde(guardada);
     }
 
-    /**
-     * Crea una orden a partir de un evento de carrito finalizado.
-     * Es crucial para la integración asíncrona con Ventas.
-     */
     @Transactional
     public OrdenResumen crearDesdeCarrito(UUID clienteId, DireccionEnvio direccionEnvio, BigDecimal monto) {
-        Orden orden = new Orden(clienteId, direccionEnvio);
-        
-        // Sincronizamos el total del carrito con la nueva orden
-        orden.setTotal(monto);
-        orden.setSubtotal(monto);
-        
-        Orden guardada = ordenRepository.save(orden);
-        
-        // Notificamos que la orden existe (útil para que Ventas sepa que debe limpiar el carrito)
-        notificarOrdenCreada(guardada, clienteId);
-        
-        return OrdenResumen.desde(guardada);
+        return crear(clienteId, direccionEnvio, monto);
     }
 
     private void notificarOrdenCreada(Orden guardada, UUID clienteId) {
@@ -122,10 +141,25 @@ public class OrdenService {
         return OrdenResumen.desde(ordenRepository.save(orden));
     }
 
-    @Transactional
-    public OrdenResumen marcarEnviada(UUID ordenId, String numeroGuia) {
+@Transactional
+    public OrdenResumen marcarEnviada(UUID ordenId) {
+        // 1. Buscamos la orden (que ya trae la dirección que le pasaste desde el carrito)
         Orden orden = buscarPorId(ordenId);
-        orden.marcarEnviada(numeroGuia);
+        
+        // 2. Extraemos la dirección guardada para usarla en la lógica (opcional, 
+        // por ejemplo, si el CP determina las letras de la guía)
+        DireccionEnvio destino = orden.getDireccionEnvio();
+        String prefijoEstado = destino.getEstado().substring(0, 3).toUpperCase(); // ej: "CDM" para CDMX
+        
+        // 3. Generamos la guía usando los datos reales de envío
+        String numeroGuiaGenerado = "ENV-" + prefijoEstado + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        
+        // 4. Marcamos como enviada y le asignamos la guía
+        orden.marcarEnviada(numeroGuiaGenerado);
+        
+        System.out.println("📦 Orden enviada a " + destino.getCiudad() + ". Guía generada: " + numeroGuiaGenerado);
+        
+        // 5. Guardamos
         return OrdenResumen.desde(ordenRepository.save(orden));
     }
 

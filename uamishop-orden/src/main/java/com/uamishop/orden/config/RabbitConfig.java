@@ -1,9 +1,6 @@
 package com.uamishop.orden.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -14,15 +11,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    // Exchanges
+    // --- EXCHANGES ---
     public static final String EVENTS_EXCHANGE = "uamishop.events";
 
-    // Nombres de Colas
+    // --- NOMBRES DE COLAS ---
+    // Estas son las constantes que tu Listener usa en @RabbitListener(queues = ...)
     public static final String QUEUE_CATALOGO_PRODUCTO_COMPRADO = "catalogo.producto-comprado";
     public static final String QUEUE_CATALOGO_PRODUCTO_AGREGADO = "catalogo.producto-agregado-carrito";
     public static final String QUEUE_CARRITO_FINALIZADO = "uamishop.ventas.carrito.finalizado";
 
-    // Routing Keys
+    // --- ROUTING KEYS ---
     public static final String RK_PRODUCTO_COMPRADO = "producto.comprado";
     public static final String RK_PRODUCTO_AGREGADO = "producto.agregado-carrito";
     public static final String RK_ORDEN_CREADA = "orden.creada";
@@ -50,7 +48,7 @@ public class RabbitConfig {
         return new Queue(QUEUE_CARRITO_FINALIZADO, true);
     }
 
-    /* --- CONFIGURACIÓN DE BINDINGS --- */
+    /* --- CONFIGURACIÓN DE BINDINGS (Unión de Cola + Exchange + Routing Key) --- */
 
     @Bean
     public Binding catalogoProductoCompradoBinding(Queue catalogoProductoCompradoQueue, TopicExchange eventsExchange) {
@@ -73,25 +71,28 @@ public class RabbitConfig {
                 .with(RK_CARRITO_FINALIZADO);
     }
 
-    /* --- INFRAESTRUCTURA RABBIT --- */
+    /* --- INFRAESTRUCTURA Y SERIALIZACIÓN --- */
 
+    /**
+     * Este Bean es vital para que RabbitMQ pueda transformar los JSON 
+     * que vienen de Ventas en objetos Java automáticamente.
+     */
     @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
-            Jackson2JsonMessageConverter messageConverter) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter);
+        template.setMessageConverter(jackson2JsonMessageConverter());
         return template;
     }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
-        // Esto fuerza la declaración de colas y exchanges al iniciar la app
+        // Esto asegura que al levantar la app, RabbitMQ cree las colas si no existen
         admin.setAutoStartup(true); 
         return admin;
     }

@@ -81,14 +81,12 @@ public class CarritoController {
     public ResponseEntity<?> agregar(@PathVariable UUID id,
             @Valid @RequestBody AgregarProductoRequest request) {
         
-        // 1. Ejecutamos la lógica (que ahora usa el API de catálogo)
+        // El controlador solo pasa los datos "limpios" al servicio
         service.agregarProducto(
                 new CarritoId(id), 
                 new ProductoId(request.productoId()), 
                 request.cantidad());
                 
-        // 2. En lugar de usar el Mapper que dispara el error de Hibernate,
-        // usamos el método que devuelve el resumen directamente.
         return ResponseEntity.ok(service.obtenerResumen(id));
     }
 

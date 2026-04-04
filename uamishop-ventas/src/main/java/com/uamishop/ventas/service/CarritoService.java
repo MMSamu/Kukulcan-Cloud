@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ public class CarritoService {
 
     // --- MÉTODOS PÚBLICOS ---
 
+    
     @Transactional(readOnly = true)
     public CarritoResumen obtenerResumen(UUID carritoId) {
         Carrito carrito = obtenerCarrito(new CarritoId(carritoId));
@@ -66,8 +68,9 @@ public class CarritoService {
      * MÉTODO CORREGIDO: 
      * Ahora busca el precio real en la tabla de productos local (sincronizada vía RabbitMQ).
      */
-    @Transactional
+@Transactional
     public Carrito agregarProducto(CarritoId carritoId, ProductoId productoId, int cantidad) {
+        // 1. Consultamos el catálogo
         ProductoResumen productoExterno = catalogoApi.obtenerProducto(productoId.valor());
         
         if (productoExterno == null) {
@@ -76,13 +79,16 @@ public class CarritoService {
 
         Carrito carrito = obtenerCarrito(carritoId);
         
-        // AHORA SÍ LE PASAMOS EL NOMBRE Y EL SKU QUE VIENEN DEL CATÁLOGO
+        Money precioVigente = productoExterno.precio(); 
+        
+        String skuDefault = "S/N";
+
         carrito.agregarProducto(
             productoId, 
             cantidad, 
-            productoExterno.precio(), 
+            precioVigente, 
             productoExterno.nombre(), 
-            "S/N" // O productoExterno.sku() si existe
+            skuDefault
         );
 
         return carritoRepository.save(carrito);
@@ -116,39 +122,39 @@ public class CarritoService {
         return carritoRepository.save(carrito);
     }
 
-    @Transactional
-    public Carrito completarCheckout(CarritoId carritoId) {
-        Carrito carrito = obtenerCarrito(carritoId);
-        carrito.completarCheckout();
+@Transactional
+public Carrito completarCheckout(CarritoId carritoId) {
+    Carrito carrito = obtenerCarrito(carritoId);
+    carrito.completarCheckout();
+    Carrito carritoGuardado = carritoRepository.save(carrito);
+
+    try {
+        // IMPORTANTE: Asegúrate que el evento tenga estos campos exactos
+        CarritoFinalizadoEvent evento = new CarritoFinalizadoEvent(
+            carrito.getClienteId().getValor(),
+            "Av. San Rafael Atlixco", // calle
+            "186",                    // numero (este campo parece que no lo usas en DireccionEnvio, 
+                                    // podrías concatenarlo a la calle o ignorarlo)
+            "Iztapalapa",             // ciudad
+            "CDMX",                   // estado
+            "09340",                  // codigoPostal
+            "9177119297",             // telefono (10 dígitos exactos)
+            carrito.getTotal().getCantidad()
+        );
+
+        rabbitTemplate.convertAndSend(
+            RabbitConfig.EVENTS_EXCHANGE, 
+            RabbitConfig.RK_CARRITO_FINALIZADO, 
+            evento
+        );
         
-        Carrito carritoGuardado = carritoRepository.save(carrito);
-
-        try {
-            // Creamos el evento incluyendo el TOTAL real del carrito
-            CarritoFinalizadoEvent evento = new CarritoFinalizadoEvent(
-                carrito.getClienteId().getValor(),
-                "Av. San Rafael Atlixco", // O los datos que tengas en tu form de checkout
-                "186", 
-                "Iztapalapa", 
-                "CDMX", 
-                "09340", 
-                "555-1234",
-                carrito.getTotal().getCantidad() // <--- EL MONTO REAL AQUÍ
-            );
-
-            rabbitTemplate.convertAndSend(
-                RabbitConfig.EVENTS_EXCHANGE, 
-                "uamishop.ventas.carrito.finalizado", 
-                evento
-            );
-            
-            System.out.println("🚀 Evento de checkout enviado a Órdenes con total: $" + carrito.getTotal().getCantidad());
-        } catch (Exception e) {
-            System.err.println("❌ Falló el envío del evento: " + e.getMessage());
-        }
-
-        return carritoGuardado;
+        System.out.println("🚀 Total de $" + carrito.getTotal().getCantidad() + " enviado a Órdenes.");
+    } catch (Exception e) {
+        System.err.println("❌ Error enviando evento: " + e.getMessage());
     }
+
+    return carritoGuardado;
+}
 
     @Transactional
     public Carrito abandonar(CarritoId carritoId) {

@@ -5,7 +5,7 @@ import com.uamishop.shared.event.CarritoFinalizadoEvent;
 import com.uamishop.orden.domain.DireccionEnvio;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-import java.math.BigDecimal;
+import com.uamishop.orden.config.RabbitConfig;
 
 @Component
 public class CarritoFinalizadoListener {
@@ -16,20 +16,24 @@ public class CarritoFinalizadoListener {
         this.ordenService = ordenService;
     }
 
-    @RabbitListener(queues = "uamishop.ventas.carrito.finalizado")
-    public void handleCarritoFinalizado(CarritoFinalizadoEvent event) {
-        // Construimos la dirección con los datos del evento
-        DireccionEnvio direccion = DireccionEnvio.crear(
-            event.calle() + " " + event.numero(),
-            event.ciudad(),
-            event.estado(),
-            event.codigoPostal(),
-            event.telefono()
-        );
+@RabbitListener(queues = RabbitConfig.QUEUE_CARRITO_FINALIZADO)
+public void handleCarritoFinalizado(CarritoFinalizadoEvent event) {
+    // Si el evento trae 'calle' y 'numero' por separado, júntalos:
+    String calleCompleta = event.calle() + " " + event.numero();
 
-        // PASAMOS EL TOTAL REAL QUE VIENE EN EL EVENTO
-        ordenService.crearDesdeCarrito(event.clienteId(), direccion, event.total());
-        
-        System.out.println("✅ Orden creada automáticamente vía RabbitMQ con monto: $" + event.total());
-    }
+    DireccionEnvio direccion = DireccionEnvio.crear(
+            calleCompleta,      // calle
+            event.ciudad(),     // ciudad
+            event.estado(),     // estado
+            event.codigoPostal(),// codigoPostal
+            event.telefono()    // telefonoContacto (debe ser de 10 dígitos)
+    );
+
+    ordenService.registrarOActualizarMonto(
+            null, 
+            event.clienteId(), 
+            direccion, 
+            event.total() 
+    );
+}
 }
