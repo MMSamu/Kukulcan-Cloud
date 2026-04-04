@@ -1,4 +1,4 @@
-package com.uamishop.catalogo.api;
+package com.uamishop.backend.catalogo.api;
 
 import com.uamishop.backend.shared.domain.Money;
 import java.util.UUID;

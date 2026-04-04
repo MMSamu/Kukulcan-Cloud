@@ -1,4 +1,4 @@
-package com.uamishop.catalogo.api;
+package com.uamishop.backend.catalogo.api;
 
 import java.util.UUID;
 import java.util.List;
