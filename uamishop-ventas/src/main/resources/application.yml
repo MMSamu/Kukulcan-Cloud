@@ -30,6 +30,22 @@ catalogo:
   service:
     url: ${CATALOGO_SERVICE_URL:http://localhost:8081}
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      catalogoService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+
 springdoc:
   api-docs:
     path: /api-docs
