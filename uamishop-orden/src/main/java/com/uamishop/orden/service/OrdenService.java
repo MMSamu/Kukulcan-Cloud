@@ -27,19 +27,20 @@ import java.util.UUID;
 public class OrdenService {
 
     private final OrdenJpaRepository ordenRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final OutboxService outboxService;
     private final CatalogoApi catalogoApi;
 
-    public OrdenService(OrdenJpaRepository ordenRepository, 
-                        RabbitTemplate rabbitTemplate,
-                        CatalogoApi catalogoApi) {
+    public OrdenService(OrdenJpaRepository ordenRepository,
+            OutboxService outboxService,
+            CatalogoApi catalogoApi) {
         this.ordenRepository = ordenRepository;
-        this.rabbitTemplate = rabbitTemplate;
+        this.outboxService = outboxService;
         this.catalogoApi = catalogoApi;
     }
 
     @Transactional
-    public OrdenResumen registrarOActualizarMonto(UUID ordenId, UUID clienteId, DireccionEnvio direccionEnvio, BigDecimal monto, List<ItemOrdenRequest> items) {
+    public OrdenResumen registrarOActualizarMonto(UUID ordenId, UUID clienteId, DireccionEnvio direccionEnvio,
+            BigDecimal monto, List<ItemOrdenRequest> items) {
         Orden orden;
 
         if (ordenId == null) {
@@ -53,7 +54,7 @@ public class OrdenService {
                         return existente;
                     })
                     .orElseGet(() -> {
-                        System.out.println("⚠️ Creando orden nueva con ID de carrito: " + ordenId);
+                        System.out.println("Creando orden nueva con ID de carrito: " + ordenId);
                         Orden nueva = crearOrdenConIdEspecifico(ordenId, clienteId, direccionEnvio);
                         if (items != null && !items.isEmpty()) {
                             cargarItemsEnOrden(nueva, items);
@@ -98,7 +99,7 @@ public class OrdenService {
                 totalCalculado = totalCalculado.add(precioUnitario.multiply(BigDecimal.valueOf(item.cantidad())));
             }
         }
-        
+
         Money moneyTotal = Money.pesos(totalCalculado.doubleValue());
         setPrivateField(orden, "subtotal", moneyTotal);
         setPrivateField(orden, "total", moneyTotal);
@@ -128,7 +129,7 @@ public class OrdenService {
     @Transactional
     public OrdenResumen procesarPago(UUID ordenId, String referenciaPago) {
         Orden orden = buscarPorId(ordenId);
-        orden.confirmar(); 
+        orden.confirmar();
         orden.procesarPago(referenciaPago);
         return OrdenResumen.desde(ordenRepository.save(orden));
     }
@@ -172,14 +173,22 @@ public class OrdenService {
     }
 
     private void notificarOrdenCreada(Orden guardada, UUID clienteId) {
-        OrdenCreadaEvent evento = new OrdenCreadaEvent(UUID.randomUUID(), Instant.now(), guardada.getId().valor(), clienteId, null);
-        rabbitTemplate.convertAndSend(RabbitConfig.EVENTS_EXCHANGE, RabbitConfig.RK_ORDEN_CREADA, evento);
+        UUID idOrden = guardada.getId().valor();
+        // El id de la orden y el del carrito son el mismo en este flujo
+        OrdenCreadaEvent evento = new OrdenCreadaEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                idOrden,
+                idOrden,
+                clienteId);
+        outboxService.guardarEvento(RabbitConfig.EVENTS_EXCHANGE, RabbitConfig.RK_ORDEN_CREADA, evento);
     }
 
     private BigDecimal calcularTotalDesdeCatalogoUsandoReflexion(Orden orden) {
         try {
             List<ItemOrden> items = (List<ItemOrden>) getPrivateField(orden, "items");
-            if (items == null || items.isEmpty()) return BigDecimal.ZERO;
+            if (items == null || items.isEmpty())
+                return BigDecimal.ZERO;
 
             BigDecimal total = BigDecimal.ZERO;
             for (ItemOrden item : items) {
@@ -200,16 +209,15 @@ public class OrdenService {
             List<ItemOrden> listaItems = (List<ItemOrden>) getPrivateField(orden, "items");
             for (ItemOrdenRequest req : itemsRequest) {
                 ItemOrden nuevoItem = ItemOrden.crear(
-                    req.productoId(), 
-                    "Pendiente", 
-                    "SKU", 
-                    req.cantidad(), 
-                    Money.pesos(1.0)
-                );
+                        req.productoId(),
+                        "Pendiente",
+                        "SKU",
+                        req.cantidad(),
+                        Money.pesos(1.0));
                 listaItems.add(nuevoItem);
             }
         } catch (Exception e) {
-            System.out.println("❌ Error cargando ítems: " + e.getMessage());
+            System.out.println("Error cargando ítems: " + e.getMessage());
         }
     }
 
@@ -227,7 +235,7 @@ public class OrdenService {
             field.setAccessible(true);
             field.set(object, value);
         } catch (Exception e) {
-            System.out.println("❌ Error seteando campo " + fieldName + ": " + e.getMessage());
+            System.out.println("Error seteando campo " + fieldName + ": " + e.getMessage());
         }
     }
 

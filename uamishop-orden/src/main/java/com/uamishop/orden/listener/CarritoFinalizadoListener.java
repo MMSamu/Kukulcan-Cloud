@@ -21,26 +21,24 @@ public class CarritoFinalizadoListener {
     }
 
     @RabbitListener(queues = RabbitConfig.CARRITO_FINALIZADO_QUEUE)
-public void manejarCarritoFinalizado(CarritoFinalizadoEvent evento) {
-    System.out.println("📩 Evento recibido. Carrito ID: " + evento.carritoId());
+    public void manejarCarritoFinalizado(CarritoFinalizadoEvent evento) {
+        System.out.println("Evento recibido. Carrito ID: " + evento.carritoId());
 
-    DireccionEnvio direccion = DireccionEnvio.crear(
-        evento.calle() + " " + evento.numero(),
-        evento.ciudad(),
-        evento.estado(),
-        evento.codigoPostal(),
-        evento.telefono()
-    );
+        DireccionEnvio direccion = DireccionEnvio.crear(
+                evento.calle() + " " + evento.numero(),
+                evento.ciudad(),
+                evento.estado(),
+                evento.codigoPostal(),
+                evento.telefono());
 
-    // PASAMOS EL carritoId para que la orden se guarde con ese ID
-    ordenService.registrarOActualizarMonto(
-            evento.carritoId(), // <--- AHORA SÍ HAY ID
-            evento.clienteId(), 
-            direccion, 
-            evento.total(),     // Traemos el total de Ventas
-            Collections.emptyList() 
-    );
-    
-    System.out.println("✅ Orden pre-registrada con ID de carrito.");
-}
+        // PASAMOS EL carritoId para que la orden se guarde con ese ID
+        ordenService.registrarOActualizarMonto(
+                evento.carritoId(), // <--- AHORA SÍ HAY ID
+                evento.clienteId(),
+                direccion,
+                evento.total(), // Traemos el total de Ventas
+                Collections.emptyList());
+
+        System.out.println("Orden pre-registrada con ID de carrito.");
+    }
 }

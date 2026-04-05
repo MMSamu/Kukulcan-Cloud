@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: uamishop-gateway
+  cloud:
+    gateway:
+      routes:
+        # Redirige a Catálogo (8081)
+        - id: catalogo-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/productos/**
+
+        # Redirige a Órdenes (8083)
+        - id: ordenes-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/ordenes/**
+            - Path=/api/v1/carritos/**
+
+      # Configuración de CORS para que el Frontend no dé errores
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"

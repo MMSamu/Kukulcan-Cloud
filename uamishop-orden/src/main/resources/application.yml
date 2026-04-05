@@ -16,12 +16,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: orden
+        #default_schema: orden
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
+    template:
+      retry:
+        enabled: true
+        initial-interval: 2000ms
+        max-attempts: 3
+      connection-timeout: 5000ms # 5 segundos máximo para conectar
 
 # Esta parte debe ir al mismo nivel que 'spring' o 'server', NO dentro de 'spring'
 catalogo:
