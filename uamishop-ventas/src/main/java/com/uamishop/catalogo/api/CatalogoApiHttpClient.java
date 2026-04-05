@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +26,8 @@ public class CatalogoApiHttpClient implements CatalogoApi {
     }
 
     @Override
+    @CircuitBreaker(name = "catalogoService", fallbackMethod = "fallbackObtenerProducto")
     public ProductoResumen obtenerProducto(UUID productoId) {
-        // CORRECCIÓN: Usamos /api/productos/ sin el v1
         String url = catalogoBaseUrl + "/api/v1/productos/" + productoId;
         try {
             ResponseEntity<ProductoResponse> response = restTemplate.getForEntity(url, ProductoResponse.class);
@@ -39,6 +40,10 @@ public class CatalogoApiHttpClient implements CatalogoApi {
         } catch (HttpClientErrorException.NotFound e) {
             throw new RuntimeException("Producto no encontrado: " + productoId);
         }
+    }
+
+    public ProductoResumen fallbackObtenerProducto(UUID productoId, Throwable t) {
+        throw new RuntimeException("Servicio de catálogo no disponible temporalmente");
     }
 
     @Override
